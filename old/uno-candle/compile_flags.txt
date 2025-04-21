@@ -1,0 +1,9 @@
+-std=gnu++11
+-Wall
+-DF_CPU=16000000UL
+-Os
+-Iinclude
+-I/Users/tony/Library/Arduino15/packages/arduino/hardware/avr/1.8.6/cores/arduino
+-I/Users/tony/Library/Arduino15/packages/arduino/hardware/avr/1.8.6/variants/standard
+-I/opt/homebrew/Cellar/avr-gcc@9/9.4.0_1/avr/include
+-I/opt/homebrew/Cellar/avr-gcc@9/9.4.0_1/lib/avr-gcc/9/gcc/avr/9.4.0/include

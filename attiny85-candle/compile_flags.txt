@@ -1,0 +1,5 @@
+-DF_CPU=8000000UL
+-I/opt/homebrew/opt/avr-gcc/avr/include
+-I/opt/homebrew/Cellar/avr-gcc@9/9.4.0_1/avr/include
+-Iinclude
+-std=gnu++2a
