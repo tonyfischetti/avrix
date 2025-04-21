@@ -23,9 +23,12 @@ ISR(WDT_vect) {
     currentRand = randomIntFromUpTo(0, 63);
 
     if ((currentRand & (0x03) << 0)) LED1::setHigh();
+    currentRand = randomIntFromUpTo(0, 63);
     if ((currentRand & (0x03) << 2)) LED2::setHigh();
-    if ((currentRand & (0x03) << 4) ||
-         !currentRand) LED3::setHigh();
+    currentRand = randomIntFromUpTo(0, 63);
+    if ((currentRand & (0x03) << 4)) LED3::setHigh();
+    // if ((currentRand & (0x03) << 4) ||
+    //      !currentRand) LED3::setHigh();
 
     // reset watchdog
     WDTCR |= (1<<WDIE);
@@ -40,16 +43,6 @@ int main() {
     power_usi_disable();
 
 	cli();
-
-	// Clear MCU Status Register
-	// MCUSR = 0;
-	//
-	// // Disable and clear all Watchdog settings P.46
-	// WDTCR = (1<<WDCE)|(1<<WDE);
-	// WDTCR = 0;
-	//
-	// // Setup Watchdog for interrupt and not reset
-    // WDTCR = (1 << WDP0) | (1 << WDP1);
 
     MCUSR &= ~(1 << WDRF);                // Clear WDT reset flag
     WDTCR |= (1 << WDCE) | (1 << WDE);    // Enable configuration mode
