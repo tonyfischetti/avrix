@@ -12,15 +12,13 @@ using LED2 = GPIO<6>;
 using LED3 = GPIO<7>;
 
 
-constexpr uint16_t STEP_DELAY { 100 };
-
 volatile uint8_t currentRand { 0 };
 
 
 ISR(WDT_vect) {
     PORTB = 0;
 
-    currentRand = randomIntFromUpTo(0, 63);
+    currentRand = rand();
 
     if ((currentRand & (0x03) << 0)) LED1::setHigh();
     if ((currentRand & (0x03) << 2)) LED2::setHigh();
