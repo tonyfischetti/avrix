@@ -23,12 +23,9 @@ ISR(WDT_vect) {
     currentRand = randomIntFromUpTo(0, 63);
 
     if ((currentRand & (0x03) << 0)) LED1::setHigh();
-    currentRand = randomIntFromUpTo(0, 63);
     if ((currentRand & (0x03) << 2)) LED2::setHigh();
-    currentRand = randomIntFromUpTo(0, 63);
-    if ((currentRand & (0x03) << 4)) LED3::setHigh();
-    // if ((currentRand & (0x03) << 4) ||
-    //      !currentRand) LED3::setHigh();
+    if ((currentRand & (0x03) << 4) ||
+         !currentRand) LED3::setHigh();
 
     // reset watchdog
     WDTCR |= (1<<WDIE);
