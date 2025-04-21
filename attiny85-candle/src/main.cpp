@@ -22,10 +22,6 @@ ISR(WDT_vect) {
 
     currentRand = randomIntFromUpTo(0, 63);
 
-    for (uint64_t i = 0; i < 100000; i++) {
-        currentRand = randomIntFromUpTo(0, i % 64);
-    }
-
     if ((currentRand & (0x03) << 0)) LED1::setHigh();
     if ((currentRand & (0x03) << 2)) LED2::setHigh();
     if ((currentRand & (0x03) << 4) ||
