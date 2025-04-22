@@ -1,9 +1,17 @@
+
+UNAME := $(shell uname)
+
+ifeq ($(UNAME), Darwin)
+	ARDUINO_DIR = $(HOME)/Library/Arduino15/packages/arduino/hardware/avr/1.8.6
+else
+	ARDUINO_DIR = $(HOME)/.arduino15/packages/arduino/hardware/avr/1.8.6
+endif
+
 MCU = atmega328p
 F_CPU = 16000000UL
 BAUD = 115200
 PORT=/dev/cu.usbmodem11401
 
-ARDUINO_DIR = $(HOME)/Library/Arduino15/packages/arduino/hardware/avr/1.8.6
 CORE_DIR = $(ARDUINO_DIR)/cores/arduino
 VARIANT_DIR = $(ARDUINO_DIR)/variants/standard
 
