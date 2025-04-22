@@ -85,8 +85,9 @@ int main() {
     // WDP0 = 0
 
     // WDTCR = (1 << WDIE) | (1 << WDP2) | (1 << WDP1); // 1 second
-    WDTCR = (1 << WDIE) | (1 << WDP1) | (1 << WDP0); // 125 ms
+    // WDTCR = (1 << WDIE) | (1 << WDP1) | (1 << WDP0); // 125 ms
     // WDTCR = (1 << WDIE) | (1 << WDP1);    // 64 ms
+    WDTCR = (1 << WDIE) | (1 << WDP2) | (1 << WDP1) | (1 << WDP0); // 2 seconds
 
 
     /*
