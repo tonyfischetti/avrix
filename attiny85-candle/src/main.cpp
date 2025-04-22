@@ -106,10 +106,12 @@ int main() {
     while (1) {
         if (flickerP) flicker();
 
+        /*
         if (buttonPressed) {
             buttonPressed = false;
             something();
         }
+        */
 
         sleep_enable();
         sleep_cpu();
