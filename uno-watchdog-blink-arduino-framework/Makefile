@@ -1,5 +1,10 @@
+.DELETE_ON_ERROR:
 
 UNAME := $(shell uname)
+MCU   := atmega328p
+F_CPU := 16000000UL
+BAUD  := 115200
+PORT  :=/dev/cu.usbmodem11401
 
 ifeq ($(UNAME), Darwin)
 	ARDUINO_DIR = $(HOME)/Library/Arduino15/packages/arduino/hardware/avr/1.8.6
@@ -7,20 +12,28 @@ else
 	ARDUINO_DIR = $(HOME)/.arduino15/packages/arduino/hardware/avr/1.8.6
 endif
 
-MCU = atmega328p
-F_CPU = 16000000UL
-BAUD = 115200
-PORT=/dev/cu.usbmodem11401
+CORE_DIR    := $(ARDUINO_DIR)/cores/arduino
+VARIANT_DIR := $(ARDUINO_DIR)/variants/standard
 
-CORE_DIR = $(ARDUINO_DIR)/cores/arduino
-VARIANT_DIR = $(ARDUINO_DIR)/variants/standard
+CC  	   := avr-gcc
+CXX        := avr-g++
+OBJCOPY    := avr-objcopy
+SIZE       := avr-size
+AVRDUDE    := avrdude
+PROGRAMMER := arduino
 
-# === TOOLS ===
-CC = avr-g++
-CFLAGS = -mmcu=$(MCU) -DF_CPU=$(F_CPU) -Os -Wall -std=gnu++17
+CFLAGS 	   := -mmcu=$(MCU) -DF_CPU=$(F_CPU) -Os -Wall -std=gnu++17
+CXXFLAGS   := $(CFLAGS)
+CXXFLAGS   += -ffunction-sections -fdata-sections
+CXXFLAGS   += -Wextra -Wpedantic -Wshadow -Wconversion # -Werror
+CXXFLAGS   += -Wsign-conversion -Wunreachable-code -Weffc++
+CXXFLAGS   += -Wmissing-braces -Wnon-virtual-dtor -Winline
+CXXFLAGS   += -Wnormalized -Wold-style-cast
+CXXFLAGS   += -Wreturn-local-addr -Wsuggest-final-types
+CXXFLAGS   += -Wsuggest-override -Wvirtual-move-assign
+CXXFLAGS   += -Wuninitialized -Wswitch-enum -Wswitch
+
 INCLUDES = -I$(CORE_DIR) -I$(VARIANT_DIR) -Iinclude
-OBJCOPY = avr-objcopy
-AVRDUDE = avrdude
 
 SRC_DIR = src
 BUILD_DIR = build
@@ -41,48 +54,37 @@ all: $(HEX)
 
 $(BUILD_DIR)/%.o: $(SRC_DIR)/%.cpp
 	@mkdir -p $(dir $@)
-	$(CC) $(CFLAGS) $(INCLUDES) -c $< -o $@
+	$(CXX) $(CXXFLAGS) $(INCLUDES) -c $< -o $@
 
-# Compile Arduino core sources
+# arduino core sources
 $(BUILD_DIR)/%.o: %.c
 	@mkdir -p $(dir $@)
-	avr-gcc $(CFLAGS) $(INCLUDES) -c $< -o $@
+	$(CC) $(CFLAGS) $(INCLUDES) -c $< -o $@
 
 $(BUILD_DIR)/%.o: %.cpp
 	@mkdir -p $(dir $@)
-	avr-g++ $(CFLAGS) $(INCLUDES) -c $< -o $@
+	$(CXX) $(CFLAGS) $(INCLUDES) -c $< -o $@
 
 $(BUILD_DIR)/$(CORE_DIR)/wiring_pulse.o: $(CORE_DIR)/wiring_pulse.S
 	@mkdir -p $(dir $@)
-	avr-gcc $(CFLAGS) $(INCLUDES) -x assembler-with-cpp -c $< -o $@
+	$(CC) $(CFLAGS) $(INCLUDES) -x assembler-with-cpp -c $< -o $@
 
-# Link everything
+# link everything
 $(ELF): $(OBJ_FILES) $(CORE_OBJS)
 	$(CC) $(CFLAGS) $(INCLUDES) $^ -o $@
+	$(SIZE) $@
 
-# Convert to HEX
 $(HEX): $(ELF)
 	$(OBJCOPY) -O ihex -R .eeprom $< $@
 
-# Flash
+.PHONY: flash
 flash: $(HEX)
-	$(AVRDUDE) -v -patmega328p -carduino -P$(PORT) -b$(BAUD) -D -Uflash:w:$<:i
+	$(AVRDUDE) -c $(PROGRAMMER) -v -p $(MCU) -P$(PORT) -b$(BAUD) -D -Uflash:w:$<:i
 
-# Clean
+.PHONY: clean
 clean:
 	rm -rf $(BUILD_DIR)
 
-print-core-sources:
-	@find $(CORE_DIR) -name "*.S"
-
-print-core-objs:
-	echo $(CORE_OBJS)
-
-gen-compile-commands:
-	bear -- make
-
-
-#  TODO  phonies
 .PHONY: monitor
 monitor:
 	arduino-cli monitor -p $(PORT)
