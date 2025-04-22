@@ -3,7 +3,7 @@ F_CPU = 16000000UL
 BAUD = 115200
 PORT=/dev/cu.usbmodem11401
 
-ARDUINO_DIR = $(HOME)/Library/Arduino15/packages/arduino/hardware/avr/1.8.6
+ARDUINO_DIR = $(HOME)/.arduino15/packages/arduino/hardware/avr/1.8.6
 CORE_DIR = $(ARDUINO_DIR)/cores/arduino
 VARIANT_DIR = $(ARDUINO_DIR)/variants/standard
 

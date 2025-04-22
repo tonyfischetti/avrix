@@ -1,8 +1,6 @@
 MCU = atmega328p
 F_CPU = 16000000UL
 BAUD = 115200
-# PORT=/dev/tty.usbmodem1401
-# on board programmer  TODO  document
 PORT=/dev/cu.usbmodem11401
 
 ARDUINO_DIR = $(HOME)/Library/Arduino15/packages/arduino/hardware/avr/1.8.6
@@ -11,7 +9,7 @@ VARIANT_DIR = $(ARDUINO_DIR)/variants/standard
 
 # === TOOLS ===
 CC = avr-g++
-CFLAGS = -mmcu=$(MCU) -DF_CPU=$(F_CPU) -Os -Wall -std=gnu++11
+CFLAGS = -mmcu=$(MCU) -DF_CPU=$(F_CPU) -Os -Wall -std=gnu++17
 INCLUDES = -I$(CORE_DIR) -I$(VARIANT_DIR) -Iinclude
 OBJCOPY = avr-objcopy
 AVRDUDE = avrdude

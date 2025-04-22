@@ -1,6 +1,6 @@
 -D__AVR_ATmega328P__
 -DF_CPU=16000000UL
--std=gnu++2a
+-std=gnu++17
 -xc++
 -Os
 -Iinclude

@@ -14,7 +14,7 @@ AVRDUDE    := avrdude
 PROGRAMMER := usbtiny
 
 SRC        := $(wildcard $(SRC_DIR)/*.cpp)
-CXXFLAGS   := -mmcu=$(MCU) -DF_CPU=$(F_CPU) -Os -Wall -std=gnu++2a -I$(INC_DIR) -ffunction-sections -fdata-sections
+CXXFLAGS   := -mmcu=$(MCU) -DF_CPU=$(F_CPU) -Os -Wall -std=gnu++17 -I$(INC_DIR) -ffunction-sections -fdata-sections
 LDFLAGS    := -Wl,--gc-sections
 
 all: $(BUILD_DIR)/$(TARGET).hex
