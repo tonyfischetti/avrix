@@ -14,7 +14,16 @@ AVRDUDE    := avrdude
 PROGRAMMER := usbtiny
 
 SRC        := $(wildcard $(SRC_DIR)/*.cpp)
-CXXFLAGS   := -mmcu=$(MCU) -DF_CPU=$(F_CPU) -Os -Wall -std=gnu++17 -I$(INC_DIR) -ffunction-sections -fdata-sections
+CXXFLAGS   := -mmcu=$(MCU) -DF_CPU=$(F_CPU) -I$(INC_DIR)
+CXXFLAGS   += -Os -Wall -std=gnu++17 -ffunction-sections -fdata-sections
+CXXFLAGS   += -Wextra -Wpedantic -Wshadow -Wconversion # -Werror
+CXXFLAGS   += -Wsign-conversion -Wunreachable-code -Weffc++
+CXXFLAGS   += -Wmissing-braces -Wnon-virtual-dtor -Winline
+CXXFLAGS   += -Wnormalized -Wold-style-cast
+CXXFLAGS   += -Wreturn-local-addr -Wsuggest-final-types
+CXXFLAGS   += -Wsuggest-override -Wvirtual-move-assign
+CXXFLAGS   += -Wuninitialized -Wswitch-enum -Wswitch
+
 LDFLAGS    := -Wl,--gc-sections
 
 all: $(BUILD_DIR)/$(TARGET).hex
@@ -33,9 +42,8 @@ flash: $(BUILD_DIR)/$(TARGET).hex
 
 .PHONY: fuses
 fuses:
-	avrdude -c $(PROGRAMMER) -p $(MCU) -U lfuse:w:0x62:m -U hfuse:w:0xDF:m -U efuse:w:0xFF:m
-# 1 MHz avrdude -c $(PROGRAMMER) -p $(MCU) -U lfuse:w:0x62:m -U hfuse:w:0xDF:m -U efuse:w:0xFF:m
-# 8 MHz avrdude -c $(PROGRAMMER) -p $(MCU) -U lfuse:w:0xE2:m -U hfuse:w:0xDF:m -U efuse:w:0xFF:m
+	avrdude -c $(PROGRAMMER) -p $(MCU) -U lfuse:w:0x62:m -U hfuse:w:0xDF:m -U efuse:w:0xFF:m # 1 MHz
+# avrdude -c $(PROGRAMMER) -p $(MCU) -U lfuse:w:0xE2:m -U hfuse:w:0xDF:m -U efuse:w:0xFF:m # 8 MHz
 
 .PHONY: clean
 clean:

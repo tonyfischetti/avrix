@@ -45,7 +45,7 @@ void flicker() {
 
     PORTB = 0;
 
-    currentRand = rand();
+    currentRand = static_cast<uint8_t>(rand());
 
     if ((currentRand & (0x03) << 0)) LED1::setHigh();
     if ((currentRand & (0x03) << 2)) LED2::setHigh();
@@ -69,7 +69,7 @@ int main() {
 	cli();
 
     // MCUSR - MCU Status Register
-    MCUSR &= ~(1 << WDRF);
+    MCUSR &= static_cast<uint8_t>(~(1 << WDRF));
     // WDRF = 3 - clear the WDT reset flag
 
     // WDTCR - Watchdog Timer Control Register
