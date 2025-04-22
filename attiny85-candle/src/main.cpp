@@ -51,6 +51,10 @@ void flicker() {
     if ((currentRand & (0x03) << 2)) LED2::setHigh();
     if ((currentRand & (0x03) << 4) ||
          !currentRand) LED3::setHigh();
+
+    // make watchdog use interrupts (not resets) again
+    WDTCR |= (1 << WDCE);
+
 }
 
 
