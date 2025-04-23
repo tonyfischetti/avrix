@@ -88,8 +88,8 @@ void flicker() {
     if ((current_rand & (0x03) << 2)) LED2::setHigh();
     else                              LED2::setLow();
     if ((current_rand & (0x03) << 4) ||
-         !current_rand) LED3::setHigh();
-    else LED3::setLow();
+       !(current_rand & (0x0f)))      LED3::setHigh();
+    else                              LED3::setLow();
 }
 
 
