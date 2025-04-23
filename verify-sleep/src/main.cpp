@@ -13,8 +13,7 @@
 
 
 using LED1 = GPIO<5>;
-using LED2 = GPIO<6>;
-using LED3 = GPIO<7>;
+using DIN  = GPIO<3>;
 
 volatile bool    flicker_p    { false };
 volatile uint8_t current_rand { 0 };
@@ -27,19 +26,6 @@ ISR(WDT_vect) {
     // tickCounter++;
 }
 
-// example
-// ISR(PCINT0_vect) {
-//   buttonPressed = true; // Set button flag
-// }
-
-
-uint32_t get_tick_counter() {
-  uint32_t value;
-  ATOMIC_BLOCK(ATOMIC_RESTORESTATE) {
-    value = tick_counter;
-  }
-  return value;
-}
 
 void reset_watchdog() {
 	cli();
@@ -79,20 +65,6 @@ void go_to_sleep() {
     sleep_disable();
 }
 
-void flicker() {
-    flicker_p = false;
-
-    current_rand = static_cast<uint8_t>(rand());
-
-    if ((current_rand & (0x03) << 0)) LED1::setHigh();
-    else                              LED1::setLow();
-    if ((current_rand & (0x03) << 2)) LED2::setHigh();
-    else                              LED2::setLow();
-    if ((current_rand & (0x03) << 4) ||
-       !(current_rand & (0x0f)))      LED3::setHigh();
-    else                              LED3::setLow();
-}
-
 
 int main() {
 
@@ -110,23 +82,18 @@ int main() {
     */
 
     LED1::setOutput();
-    LED2::setOutput();
-    LED3::setOutput();
+    LED1::setLow();
+    LED1::pullUp();
     
     reset_watchdog();
 
     while (1) {
-        if (flicker_p) flicker();
 
-        /*
-        if (buttonPressed) {
-            buttonPressed = false;
-            something();
-        }
-        */
+        if (DIN::isHigh()) { LED1::setHigh(); }
+        else { LED1::setLow(); }
 
         reset_watchdog();
-        go_to_sleep();
+        // go_to_sleep();
     }
 
     return 0;

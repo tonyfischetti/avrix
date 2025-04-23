@@ -1,0 +1,21 @@
+-D__AVR_ATmega328P__
+-DF_CPU=16000000UL
+-std=gnu++2a
+-xc++
+-Os
+-Iinclude
+
+# debian
+-I/usr/lib/avr/include
+-I/home/tony/.arduino15/packages/arduino/hardware/avr/1.8.6/cores/arduino
+-I/home/tony/.arduino15/packages/arduino/hardware/avr/1.8.6/variants/standard
+
+# macos
+-I/opt/homebrew/opt/avr-gcc/avr/include
+-I/opt/homebrew/opt/avr-gcc/lib/avr-gcc/9/gcc/avr/9.4.0/include
+-I/opt/homebrew/opt/avr-gcc/lib/avr-gcc/9/gcc/avr/9.4.0/include-fixed
+-I/Users/tony/Library/Arduino15/packages/arduino/hardware/avr/1.8.6/cores/arduino
+-I/Users/tony/Library/Arduino15/packages/arduino/hardware/avr/1.8.6/variants/standard
+
+-Wno-unknown-attributes
+
