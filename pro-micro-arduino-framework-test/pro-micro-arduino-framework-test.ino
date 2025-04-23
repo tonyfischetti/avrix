@@ -4,7 +4,7 @@
 
 constexpr uint16_t BAUD_RATE { 9600 };
 
-constexpr uint8_t LED1 { 4 };
+constexpr uint8_t LED1 { 8 };
 
 void setup() {
     Serial.begin(BAUD_RATE);

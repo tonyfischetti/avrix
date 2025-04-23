@@ -1,7 +1,7 @@
 .DELETE_ON_ERROR:
 
 UNAME := $(shell uname)
-MCU   := atmega328p
+MCU   := atmega32u4
 F_CPU := 16000000UL
 BAUD  := 57600
 PORT  :=/dev/cu.usbmodem1401
@@ -13,17 +13,19 @@ else
 endif
 
 CORE_DIR    := $(ARDUINO_DIR)/cores/arduino
-VARIANT_DIR := $(ARDUINO_DIR)/variants/eightanaloginputs
+VARIANT_DIR := $(ARDUINO_DIR)/variants/leonardo
 
 CC  	   := avr-gcc
 CXX        := avr-g++
 OBJCOPY    := avr-objcopy
 SIZE       := avr-size
 AVRDUDE    := avrdude
-PROGRAMMER := arduino
+PROGRAMMER := avr109
 
-CFLAGS 	   := -mmcu=$(MCU) -DF_CPU=$(F_CPU) -Os -Wall -std=gnu++17
+CFLAGS 	   := -mmcu=$(MCU) -DF_CPU=$(F_CPU) -DUSB_VID=0x2341 -DUSB_PID=0x8037
+CFLAGS     += -fno-threadsafe-statics
 CXXFLAGS   := $(CFLAGS)
+CXXFLAGS   +=  -Os -Wall -std=gnu++17
 CXXFLAGS   += -ffunction-sections -fdata-sections
 CXXFLAGS   += -Wextra -Wpedantic -Wshadow -Wconversion # -Werror
 CXXFLAGS   += -Wsign-conversion -Wunreachable-code -Weffc++
@@ -79,6 +81,7 @@ $(HEX): $(ELF)
 
 .PHONY: flash
 flash: $(HEX)
+	sleep 2
 	$(AVRDUDE) -c $(PROGRAMMER) -v -p $(MCU) -P$(PORT) -D -Uflash:w:$<:i
 #$(AVRDUDE) -c $(PROGRAMMER) -v -p $(MCU) -P$(PORT) -b$(BAUD) -D -Uflash:w:$<:i
 

@@ -16,3 +16,10 @@ avr-gcc -mmcu=atmega328p -xc -E -v -
 -D__AVR_ATmega328P__
 -D__AVR_ATtiny85__
 
+
+
+# on mac
+...
+brew tap osx-cross/avr
+brew install avr-gcc
+...
