@@ -4,7 +4,7 @@ UNAME := $(shell uname)
 MCU   := atmega328p
 F_CPU := 16000000UL
 BAUD  := 57600
-PORT  :=/dev/cu.usbmodem11401
+PORT  :=/dev/cu.usbmodem1401
 
 ifeq ($(UNAME), Darwin)
 	ARDUINO_DIR = $(HOME)/Library/Arduino15/packages/arduino/hardware/avr/1.8.6
@@ -79,7 +79,8 @@ $(HEX): $(ELF)
 
 .PHONY: flash
 flash: $(HEX)
-	$(AVRDUDE) -c $(PROGRAMMER) -v -p $(MCU) -P$(PORT) -b$(BAUD) -D -Uflash:w:$<:i
+	$(AVRDUDE) -c $(PROGRAMMER) -v -p $(MCU) -P$(PORT) -D -Uflash:w:$<:i
+#$(AVRDUDE) -c $(PROGRAMMER) -v -p $(MCU) -P$(PORT) -b$(BAUD) -D -Uflash:w:$<:i
 
 .PHONY: clean
 clean:
