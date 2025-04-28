@@ -2,8 +2,8 @@
 
 MCU        := atmega328p
 MCUAVRD    := m328p
-F_CPU      := 8000000UL
-BAUD       := 115200
+F_CPU      := 16000000UL
+BAUD       := 9600
 TARGET     := main
 SRC_DIR    := src
 INC_DIR    := include
@@ -44,7 +44,9 @@ flash: $(BUILD_DIR)/$(TARGET).hex
 
 .PHONY: fuses
 fuses:
-	avrdude -c $(PROGRAMMER) -p $(MCUAVRD) -U lfuse:w:0xE2:m -U hfuse:w:0xD9:m -U efuse:w:0xFF:m 
+	avrdude -c $(PROGRAMMER) -p $(MCUAVRD) -U lfuse:w:0xD6:m -U hfuse:w:0xD9:m -U efuse:w:0xFF:m  # external crystal
+# avrdude -c $(PROGRAMMER) -p $(MCUAVRD) -U lfuse:w:0x62:m -U hfuse:w:0xD9:m -U efuse:w:0xFF:m  # 1MHz
+# avrdude -c $(PROGRAMMER) -p $(MCUAVRD) -U lfuse:w:0xE2:m -U hfuse:w:0xD9:m -U efuse:w:0xFF:m  # 8MHz
 
 .PHONY: clean
 clean:
