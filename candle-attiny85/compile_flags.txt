@@ -1,0 +1,15 @@
+-D__AVR_ATtiny85__
+-DF_CPU=1000000UL
+-std=gnu++17
+-xc++
+-Os
+-Iinclude
+
+# debian
+-I/usr/lib/avr/include
+
+# mac os
+-I/opt/homebrew/opt/avr-gcc/avr/include
+-I/opt/homebrew/Cellar/avr-gcc@9/9.4.0_1/avr/include
+
+-Wno-unknown-attributes
