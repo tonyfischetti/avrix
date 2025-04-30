@@ -12,12 +12,13 @@
 #include "attiny85-hal.hpp"
 
 
-using LED1 = GPIO<5>;
+using GATE = GPIO<5>;
+
+using LED1 = GPIO<2>;
 using LED2 = GPIO<6>;
 using LED3 = GPIO<7>;
 
 volatile bool    flicker_p    { false };
-volatile uint8_t current_rand { 0 };
 
 volatile uint32_t tick_counter { 0 };
 
@@ -80,6 +81,7 @@ void go_to_sleep() {
 }
 
 void flicker() {
+    static uint8_t current_rand { 0 };
     flicker_p = false;
 
     current_rand = static_cast<uint8_t>(rand());

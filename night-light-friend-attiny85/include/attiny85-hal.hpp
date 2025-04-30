@@ -14,10 +14,10 @@ template<uint8_t pinNumber>
 struct GPIO {
     static constexpr uint8_t mask { getMask(pinNumber) };
 
-    static constexpr void setHigh()   { PORTB |=  mask;  }
-    static constexpr void setLow()    { PORTB &= ~mask;  }
-    static constexpr void toggle()    { PORTB  ^=  mask; }
-    static constexpr void setOutput() { DDRB  |=  mask;  }
-    static constexpr void setInput()  { DDRB  &= ~mask;  }
+    static constexpr void setHigh()   { PORTB |=  mask; }
+    static constexpr void setLow()    { PORTB &= ~mask; }
+    static constexpr void setOutput() { DDRB  |=  mask; }
+    static constexpr void setInput()  { DDRB  &= ~mask; }
+    static constexpr void toggle()    { DDRB  ^=  mask; }
 };
 
