@@ -21,11 +21,11 @@ using LED1 = GPIO<2>;
 using LED2 = GPIO<6>;
 using LED3 = GPIO<7>;
 
-volatile bool    flicker_time_p   { false };
-volatile bool    flicker_mode_p   { false };
-volatile bool    button_pressed_p { false };
 
-volatile uint32_t tick_counter    { 0 };
+volatile uint32_t tick_counter  { 0 };
+volatile bool flicker_time_p   { false };
+volatile bool button_pressed_p { false };
+uint8_t mode                   { 0x00 };
 
 
 ISR(WDT_vect) {
@@ -101,6 +101,28 @@ void flicker() {
 }
 
 
+void move_mode_forward() {
+    mode = (mode + 1) % 3;
+    //  TODO  use switch/case
+    if (!mode) {
+        GATE::setLow();
+        // install watchdog
+    } else if (mode == 1) {
+        // uninstall watchdog
+        GATE::setLow();
+        LED1::setHigh();
+        LED2::setHigh();
+        LED3::setHigh();
+    } else {
+        // uninstall watchdog
+        LED1::setLow();
+        LED2::setLow();
+        LED3::setLow();
+        GATE::setHigh();
+    }
+}
+
+
 int main() {
 
     // power_adc_disable();
@@ -125,17 +147,14 @@ int main() {
     reset_watchdog();
 
     while (1) {
-        if (flicker_mode_p) {
-            GATE::setLow();
+        if (!mode) {
             if (flicker_time_p) flicker();
-        } else {
-            GATE::setHigh();
         }
 
         if (button_pressed_p) {
-            _delay_ms(150);
+            _delay_ms(200);
             button_pressed_p = false;
-            flicker_mode_p = !flicker_mode_p;
+            move_mode_forward();
         }
 
         reset_watchdog();
@@ -144,5 +163,4 @@ int main() {
 
     return 0;
 }
-
 
