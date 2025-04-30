@@ -8,30 +8,35 @@
 #include <avr/sleep.h>
 
 #include <util/atomic.h>
+#include <util/delay.h>
 
 #include "attiny85-hal.hpp"
 
 
 using GATE = GPIO<5>;
 
+using SW = GPIO<3>;
+
 using LED1 = GPIO<2>;
 using LED2 = GPIO<6>;
 using LED3 = GPIO<7>;
 
-volatile bool    flicker_p    { false };
+volatile bool    flicker_time_p   { false };
+volatile bool    flicker_mode_p   { false };
+volatile bool    button_pressed_p { false };
 
-volatile uint32_t tick_counter { 0 };
+volatile uint32_t tick_counter    { 0 };
 
 
 ISR(WDT_vect) {
-    flicker_p = true;
+    flicker_time_p = true;
     // tickCounter++;
 }
 
 // example
-// ISR(PCINT0_vect) {
-//   buttonPressed = true; // Set button flag
-// }
+ISR(PCINT0_vect) {
+  button_pressed_p = true; // Set button flag
+}
 
 
 uint32_t get_tick_counter() {
@@ -82,7 +87,7 @@ void go_to_sleep() {
 
 void flicker() {
     static uint8_t current_rand { 0 };
-    flicker_p = false;
+    flicker_time_p = false;
 
     current_rand = static_cast<uint8_t>(rand());
 
@@ -104,28 +109,34 @@ int main() {
     // power_usi_disable();
     power_all_disable();
 
-    /*
-    // Pin Change Interrupt on PB1 (pin 6)
-    pinMode(1, INPUT_PULLUP);        // Button input
-    GIMSK |= (1 << PCIE);            // Enable pin change interrupts
-    PCMSK |= (1 << PCINT1);          // Enable PB1 (PCINT1)
-    */
 
     LED1::setOutput();
     LED2::setOutput();
     LED3::setOutput();
+    GATE::setOutput();
+
+    SW::setInput();
+    SW::setHigh();
+
+    // Pin Change Interrupt on PB4 (pin 3)
+    GIMSK |= (1 << PCIE);            // Enable pin change interrupts
+    PCMSK |= (1 << PCINT4);          // Enable PB4 (PCINT4)
     
     reset_watchdog();
 
     while (1) {
-        if (flicker_p) flicker();
-
-        /*
-        if (buttonPressed) {
-            buttonPressed = false;
-            something();
+        if (flicker_mode_p) {
+            GATE::setLow();
+            if (flicker_time_p) flicker();
+        } else {
+            GATE::setHigh();
         }
-        */
+
+        if (button_pressed_p) {
+            _delay_ms(150);
+            button_pressed_p = false;
+            flicker_mode_p = !flicker_mode_p;
+        }
 
         reset_watchdog();
         go_to_sleep();
