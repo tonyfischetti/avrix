@@ -4,7 +4,6 @@
 #include <avr/io.h>
 #include <avr/power.h>
 #include <avr/interrupt.h>
-#include <avr/wdt.h>
 #include <avr/sleep.h>
 
 #include <util/atomic.h>
@@ -14,9 +13,7 @@
 
 
 using GATE = GPIO<5>;
-
-using SW = GPIO<3>;
-
+using SW   = GPIO<3>;
 using LED1 = GPIO<2>;
 using LED2 = GPIO<6>;
 using LED3 = GPIO<7>;
@@ -47,35 +44,6 @@ uint32_t get_tick_counter() {
   return value;
 }
 
-
-void reset_watchdog() {
-	cli();
-
-    // MCUSR - MCU Status Register
-    MCUSR &= static_cast<uint8_t>(~(1 << WDRF));
-    // WDRF = 3 - clear the WDT reset flag
-
-    // WDTCR - Watchdog Timer Control Register
-    WDTCR |= (1 << WDCE) | (1 << WDE);  // needed to change prescaler bits
-    // WDCE = 4 - Watchdog Change Enable (needed to change prescaler bits)
-    // WDE  = 3 - Watchdog Enable
-    // WDIE = 6 - Watchdog Timeout Interrupt Enable
-
-    // pre-scaler bits
-    // WDP3 = 5
-    // WDP2 = 2 
-    // WDP1 = 1
-    // WDP0 = 0
-
-    // WDTCR = (1 << WDIE) | (1 << WDP1);    // 64 ms
-    WDTCR = (1 << WDIE) | (1 << WDP1) | (1 << WDP0); // 125 ms
-    // WDTCR = (1 << WDIE) | (1 << WDP2); // 250 ms
-    // WDTCR = (1 << WDIE) | (1 << WDP2) | (1 << WDP1); // 1 second
-    // WDTCR = (1 << WDIE) | (1 << WDP2) | (1 << WDP1) | (1 << WDP0); // 2 seconds
-
-	// Enable all interrupts.
-	sei();
-}
 
 void flicker() {
     static uint8_t current_rand { 0 };
@@ -131,7 +99,6 @@ int main() {
 
     SW::setInput();
     SW::setPullup();
-
     SW::enablePCINT();
 
     reset_watchdog();
