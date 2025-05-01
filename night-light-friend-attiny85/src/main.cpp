@@ -5,6 +5,7 @@
 #include <avr/power.h>
 #include <avr/interrupt.h>
 #include <avr/sleep.h>
+#include <avr/wdt.h>
 
 #include <util/atomic.h>
 #include <util/delay.h>
@@ -66,19 +67,21 @@ void move_mode_forward() {
     //  TODO  use switch/case
     if (!mode) {
         GATE::setLow();
-        // install watchdog
+        reset_watchdog();
     } else if (mode == 1) {
         // uninstall watchdog
         GATE::setLow();
         LED1::setHigh();
         LED2::setHigh();
         LED3::setHigh();
+        disable_watchdog();
     } else {
         // uninstall watchdog
         LED1::setLow();
         LED2::setLow();
         LED3::setLow();
         GATE::setHigh();
+        disable_watchdog();
     }
 }
 
@@ -106,6 +109,7 @@ int main() {
     while (1) {
         if (!mode) {
             if (flicker_time_p) flicker();
+            reset_watchdog();
         }
 
         if (button_pressed_p) {
@@ -114,7 +118,6 @@ int main() {
             move_mode_forward();
         }
 
-        reset_watchdog();
         go_to_sleep(SLEEP_MODE_PWR_DOWN);
     }
 

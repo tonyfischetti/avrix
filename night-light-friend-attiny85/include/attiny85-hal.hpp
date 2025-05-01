@@ -22,9 +22,9 @@ struct GPIO {
     static constexpr void setHigh()   { PORTB |=  mask; }
     static constexpr void setPullup() { PORTB |=  mask; }
     static constexpr void setLow()    { PORTB &= ~mask; }
+    static constexpr void toggle()    { PORTB ^=  mask; }
     static constexpr void setOutput() { DDRB  |=  mask; }
     static constexpr void setInput()  { DDRB  &= ~mask; }
-    static constexpr void toggle()    { DDRB  ^=  mask; }
 
     static constexpr bool read()      { return PINB & mask; }
 
@@ -74,4 +74,11 @@ inline void reset_watchdog() {
 	sei();
 }
 
+inline void disable_watchdog() {
+    cli();                          // Disable interrupts
+    MCUSR &= ~(1 << WDRF);          // Clear Watchdog reset flag
+    WDTCR |= (1 << WDCE) | (1 << WDE); // Start timed sequence
+    WDTCR = 0x00;                  // Disable WDT
+    sei();                          // Enable interrupts
+}
 
