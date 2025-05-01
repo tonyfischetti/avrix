@@ -23,19 +23,19 @@ using LED3 = GPIO<7>;
 
 
 volatile uint32_t tick_counter  { 0 };
-volatile bool flicker_time_p   { false };
-volatile bool button_pressed_p { false };
-uint8_t mode                   { 0x00 };
+volatile bool flicker_time_p    { false };
+volatile bool button_pressed_p  { false };
+uint8_t mode                    { 0x00 };
+
 
 
 ISR(WDT_vect) {
     flicker_time_p = true;
-    // tickCounter++;
+    tick_counter++;
 }
 
-// example
 ISR(PCINT0_vect) {
-  button_pressed_p = true; // Set button flag
+  button_pressed_p = true;
 }
 
 
@@ -46,6 +46,7 @@ uint32_t get_tick_counter() {
   }
   return value;
 }
+
 
 void reset_watchdog() {
 	cli();
@@ -74,15 +75,6 @@ void reset_watchdog() {
 
 	// Enable all interrupts.
 	sei();
-}
-
-void go_to_sleep() {
-    cli();
-    set_sleep_mode(SLEEP_MODE_PWR_DOWN);
-    sleep_enable();
-    sei();
-    sleep_cpu();
-    sleep_disable();
 }
 
 void flicker() {
@@ -138,12 +130,10 @@ int main() {
     GATE::setOutput();
 
     SW::setInput();
-    SW::setHigh();
+    SW::setPullup();
 
-    // Pin Change Interrupt on PB4 (pin 3)
-    GIMSK |= (1 << PCIE);            // Enable pin change interrupts
-    PCMSK |= (1 << PCINT4);          // Enable PB4 (PCINT4)
-    
+    SW::enablePCINT();
+
     reset_watchdog();
 
     while (1) {
@@ -158,7 +148,7 @@ int main() {
         }
 
         reset_watchdog();
-        go_to_sleep();
+        go_to_sleep(SLEEP_MODE_PWR_DOWN);
     }
 
     return 0;
