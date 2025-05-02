@@ -26,7 +26,9 @@ struct GPIO {
     static constexpr void setOutput() { DDRB  |=  mask; }
     static constexpr void setInput()  { DDRB  &= ~mask; }
 
-    static constexpr bool read()      { return PINB & mask; }
+    static constexpr bool read() {
+        return PINB & mask;
+    }
 
     static constexpr void enablePCINT() {
         GIMSK |= (1 << PCIE);
@@ -45,24 +47,59 @@ inline void go_to_sleep(uint8_t mode) {
 }
 
 
+/**
+ * WATCHDOG 
+ * 
+ * The watchdog could be used as a dead-man's switch.
+ * For example, if the main loop should take X ms, and you reset
+ * the watchdog timer at the end of the loop, if there is ever any problem
+ * with runaway code, the watchdog will timeout and reset the chip
+ *
+ * oscillates at 128 kHz
+ * can be configured to interrupt instead of reset
+ *
+ * MCUSR - MCU status register
+ *   - (1 << 3) - WDRF - Watchdog Reset Flag
+ *     This bit is set if a Watchdog Reset occurs
+ *
+ *
+ * WDTCR – Watchdog Timer Control Register
+ *   - (1 << 7) - WDIF - Watchdog Timeout Interrupt Flag
+ *
+ *   - (1 << 6) - WDIE - Watchdog Timeout Interrupt Enable
+ *     To avoid the Watchdog Reset, WDIE must be set after each interrupt
+ *
+ *   - (1 << 4) - WDCE - Watchdog Change Enable
+ *   - (1 << 3) - WDE - Watchdog Enable
+ *     Needs to be written to at the same time to initiate a timed sequence
+ *     for either
+ *       * disabling an enabled interrupt
+ *       * changing the watchdog time-out (prescaler bits)
+ *
+ *       - the timeout 
+ *       the configuration of the watchdog timer (or disabling it)
+ *
+ *   - Prescaler bits:
+ *     (1 << 5) | (1 << 2) | (1 << 1) | (1 << 0)
+ *     WDP3     | WDP2     | WDP1     | WDP0   num 128KHz cycles  ~ time (secs)
+ *     0          0          0          0      2048               0.016
+ *     0          0          0          1      4096               0.032
+ *     0          0          1          0      8K                 0.064
+ *     0          0          1          1      16K (2^14)         0.13
+ *     0          1          0          0      32K                0.26
+ *     0          1          0          1      64K                0.51
+ *     0          1          1          0      128K               1.02
+ *     0          1          1          1      256K               2.04
+ *     1          0          0          0      512K               4.1
+ *     1          0          0          1      1024K              8.2
+ *
+ */
+
 inline void reset_watchdog() {
 	cli();
 
-    // MCUSR - MCU Status Register
     MCUSR &= static_cast<uint8_t>(~(1 << WDRF));
-    // WDRF = 3 - clear the WDT reset flag
-
-    // WDTCR - Watchdog Timer Control Register
-    WDTCR |= (1 << WDCE) | (1 << WDE);  // needed to change prescaler bits
-    // WDCE = 4 - Watchdog Change Enable (needed to change prescaler bits)
-    // WDE  = 3 - Watchdog Enable
-    // WDIE = 6 - Watchdog Timeout Interrupt Enable
-
-    // pre-scaler bits
-    // WDP3 = 5
-    // WDP2 = 2 
-    // WDP1 = 1
-    // WDP0 = 0
+    WDTCR |= (1 << WDCE) | (1 << WDE);
 
     // WDTCR = (1 << WDIE) | (1 << WDP1);    // 64 ms
     WDTCR = (1 << WDIE) | (1 << WDP1) | (1 << WDP0); // 125 ms
@@ -70,15 +107,15 @@ inline void reset_watchdog() {
     // WDTCR = (1 << WDIE) | (1 << WDP2) | (1 << WDP1); // 1 second
     // WDTCR = (1 << WDIE) | (1 << WDP2) | (1 << WDP1) | (1 << WDP0); // 2 seconds
 
-	// Enable all interrupts.
 	sei();
 }
 
 inline void disable_watchdog() {
-    cli();                          // Disable interrupts
-    MCUSR &= ~(1 << WDRF);          // Clear Watchdog reset flag
-    WDTCR |= (1 << WDCE) | (1 << WDE); // Start timed sequence
-    WDTCR = 0x00;                  // Disable WDT
-    sei();                          // Enable interrupts
+    cli();
+    // MCUSR &= static_cast<uint8_t>(~(1 << WDRF));
+    MCUSR &= ~(1 << WDRF);
+    WDTCR |= (1 << WDCE) | (1 << WDE);  // start timed sequence
+    WDTCR = 0x00;                       // Disable WDT
+    sei();
 }
 
