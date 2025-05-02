@@ -8,30 +8,31 @@
 #include <util/delay.h>
 
 #include "attiny85-hal.hpp"
+#include "Debouncer.hpp"
 
 
 using GATE = GPIO<5>;
-using SW   = GPIO<3>;
 using LED1 = GPIO<2>;
 using LED2 = GPIO<6>;
 using LED3 = GPIO<7>;
 using WD   = Watchdog<14>;
+GPIO<3> SW;
+Debouncer<GPIO<3>, uint32_t> SW_D(SW, false, 1);
 
 
-volatile uint32_t tick_counter  { 0 };
-volatile bool flicker_time_p    { false };
-volatile bool button_pressed_p  { false };
-uint8_t mode                    { 0x00 };
+volatile uint32_t tick_counter      { 0 };
+volatile bool watchdog_barked_p     { false };
+uint8_t mode                        { 0x00 };
 
 
 
 ISR(WDT_vect) {
-    flicker_time_p = true;
+    watchdog_barked_p = true;
     tick_counter++;
 }
 
 ISR(PCINT0_vect) {
-  button_pressed_p = true;
+  // wake up
 }
 
 
@@ -46,7 +47,6 @@ uint32_t get_tick_counter() {
 
 void flicker() {
     static uint8_t current_rand { 0 };
-    flicker_time_p = false;
 
     current_rand = static_cast<uint8_t>(rand());
 
@@ -65,25 +65,16 @@ void move_mode_forward() {
     //  TODO  use switch/case
     if (!mode) {
         GATE::setLow();
-        cli();
-        WD::reset();
-        sei();
     } else if (mode == 1) {
         GATE::setLow();
         LED1::setHigh();
         LED2::setHigh();
         LED3::setHigh();
-        cli();
-        WD::disable();
-        sei();
     } else {
         LED1::setLow();
         LED2::setLow();
         LED3::setLow();
         GATE::setHigh();
-        cli();
-        WD::disable();
-        sei();
     }
 }
 
@@ -102,21 +93,23 @@ int main() {
     LED3::setOutput();
     GATE::setOutput();
 
-    SW::setInput();
-    SW::setPullup();
-    SW::enablePCINT();
+    SW.setInput();
+    SW.setPullup();
+    SW.enablePCINT();
 
     WD::reset();
 
     while (1) {
-        if (!mode) {
-            if (flicker_time_p) flicker();
+        if (watchdog_barked_p) {
+            SW_D.update(get_tick_counter());
+            watchdog_barked_p = false;
+            if (!mode) {
+                flicker();
+            }
             WD::reset();
         }
 
-        if (button_pressed_p) {
-            _delay_ms(200);
-            button_pressed_p = false;
+        if (SW_D.isActiveP()) {
             move_mode_forward();
         }
 
