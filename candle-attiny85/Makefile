@@ -4,7 +4,7 @@ MCU        := attiny85
 F_CPU      := 1000000UL
 TARGET     := main
 SRC_DIR    := src
-INC_DIR    := include
+INC_DIR    := ../include
 BUILD_DIR  := build
 
 CXX        := avr-g++

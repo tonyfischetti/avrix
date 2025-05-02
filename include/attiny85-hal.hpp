@@ -1,5 +1,6 @@
 #pragma once
 
+#include <stdint.h>
 #include <avr/io.h>
 #include <avr/sleep.h>
 #include <avr/interrupt.h>
@@ -149,5 +150,4 @@ inline void go_to_sleep(uint8_t mode) {
     sleep_cpu();
     sleep_disable();
 }
-
 
