@@ -17,6 +17,8 @@ static constexpr uint8_t get_pin_mask(uint8_t pnum) {
 
 template<uint8_t pinNumber>
 struct GPIO {
+    static_assert(pinNumber <= 7 && pinNumber >= 2, "invalid pin");
+
     static constexpr uint8_t mask { get_pin_mask(pinNumber) };
 
     static inline void setHigh()   { PORTB |=  mask; }
@@ -114,6 +116,8 @@ static constexpr uint8_t get_wd_prescaler_bits(uint8_t pow_of_two) {
 
 template<uint8_t prescalerPowOf2>
 struct Watchdog {
+    static_assert(prescalerPowOf2 <= 20 && prescalerPowOf2 >= 11,
+            "invalid prescaler value");
     static constexpr uint8_t prescaler_bits { 
         get_wd_prescaler_bits(prescalerPowOf2)
     };
