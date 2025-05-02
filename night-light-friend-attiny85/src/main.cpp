@@ -15,6 +15,7 @@ using SW   = GPIO<3>;
 using LED1 = GPIO<2>;
 using LED2 = GPIO<6>;
 using LED3 = GPIO<7>;
+using WD   = Watchdog<14>;
 
 
 volatile uint32_t tick_counter  { 0 };
@@ -60,25 +61,29 @@ void flicker() {
 
 
 void move_mode_forward() {
-    mode = (mode + 1) % 3;
+    mode = static_cast<uint8_t>((mode + 1) % 3);
     //  TODO  use switch/case
     if (!mode) {
         GATE::setLow();
-        reset_watchdog();
+        cli();
+        WD::reset();
+        sei();
     } else if (mode == 1) {
-        // uninstall watchdog
         GATE::setLow();
         LED1::setHigh();
         LED2::setHigh();
         LED3::setHigh();
-        disable_watchdog();
+        cli();
+        WD::disable();
+        sei();
     } else {
-        // uninstall watchdog
         LED1::setLow();
         LED2::setLow();
         LED3::setLow();
         GATE::setHigh();
-        disable_watchdog();
+        cli();
+        WD::disable();
+        sei();
     }
 }
 
@@ -101,12 +106,12 @@ int main() {
     SW::setPullup();
     SW::enablePCINT();
 
-    reset_watchdog();
+    WD::reset();
 
     while (1) {
         if (!mode) {
             if (flicker_time_p) flicker();
-            reset_watchdog();
+            WD::reset();
         }
 
         if (button_pressed_p) {

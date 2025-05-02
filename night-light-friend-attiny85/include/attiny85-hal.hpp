@@ -15,6 +15,34 @@ static constexpr uint8_t get_pin_mask(uint8_t pnum) {
     else                return (1 << 0); // ???
 }
 
+static constexpr uint8_t get_wd_prescaler_bits(uint8_t pow_of_two) {
+/*
+ * pow_of_two time (secs)
+ * 11         0.016
+ * 12         0.032
+ * 13         0.064
+ * 14         0.13
+ * 15         0.26
+ * 16         0.51
+ * 17         1.02
+ * 18         2.04
+ * 19         4.1
+ * 20         8.2
+ */
+    if      (pow_of_two == 11) return 0x00;
+    else if (pow_of_two == 12) return (1 << WDP0);
+    else if (pow_of_two == 13) return (1 << WDP1);
+    else if (pow_of_two == 14) return (1 << WDP1) | (1 << WDP0);
+    else if (pow_of_two == 15) return (1 << WDP2);
+    else if (pow_of_two == 16) return (1 << WDP2) | (1 << WDP0);
+    else if (pow_of_two == 17) return (1 << WDP2) | (1 << WDP1);
+    else if (pow_of_two == 18) return (1 << WDP2) | (1 << WDP1) | (1 << WDP0);
+    else if (pow_of_two == 19) return (1 << WDP3);
+    else if (pow_of_two == 20) return (1 << WDP3) | (1 << WDP0);
+    else                       return (1 << 0); // ???  TODO  can I throw a compile-type exception?!
+}
+
+
 template<uint8_t pinNumber>
 struct GPIO {
     static constexpr uint8_t mask { get_pin_mask(pinNumber) };
@@ -35,6 +63,27 @@ struct GPIO {
         PCMSK |= mask;
     }
 };
+
+
+template<uint8_t prescalerPowOf2>
+struct Watchdog {
+    static constexpr uint8_t prescaler_bits { 
+        get_wd_prescaler_bits(prescalerPowOf2)
+    };
+
+    static constexpr void disable() {
+        MCUSR &= ~(1 << WDRF);
+        WDTCR |= (1 << WDCE) | (1 << WDE);  // start timed sequence
+        WDTCR = 0x00;                       // Disable WDT
+    }
+
+    static constexpr void reset() {
+        MCUSR &= static_cast<uint8_t>(~(1 << WDRF));
+        WDTCR |= (1 << WDCE) | (1 << WDE);
+        WDTCR = (1 << WDIE) | prescaler_bits;
+    }
+};
+//  TODO  not great. fix.
 
 
 inline void go_to_sleep(uint8_t mode) {
@@ -98,24 +147,8 @@ inline void go_to_sleep(uint8_t mode) {
 inline void reset_watchdog() {
 	cli();
 
-    MCUSR &= static_cast<uint8_t>(~(1 << WDRF));
-    WDTCR |= (1 << WDCE) | (1 << WDE);
-
-    // WDTCR = (1 << WDIE) | (1 << WDP1);    // 64 ms
-    WDTCR = (1 << WDIE) | (1 << WDP1) | (1 << WDP0); // 125 ms
-    // WDTCR = (1 << WDIE) | (1 << WDP2); // 250 ms
-    // WDTCR = (1 << WDIE) | (1 << WDP2) | (1 << WDP1); // 1 second
-    // WDTCR = (1 << WDIE) | (1 << WDP2) | (1 << WDP1) | (1 << WDP0); // 2 seconds
 
 	sei();
 }
 
-inline void disable_watchdog() {
-    cli();
-    // MCUSR &= static_cast<uint8_t>(~(1 << WDRF));
-    MCUSR &= ~(1 << WDRF);
-    WDTCR |= (1 << WDCE) | (1 << WDE);  // start timed sequence
-    WDTCR = 0x00;                       // Disable WDT
-    sei();
-}
 
