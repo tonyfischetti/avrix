@@ -65,25 +65,19 @@ void move_mode_forward() {
     //  TODO  use switch/case
     if (!mode) {
         GATE::setLow();
-        cli();
         WD::reset();
-        sei();
     } else if (mode == 1) {
         GATE::setLow();
         LED1::setHigh();
         LED2::setHigh();
         LED3::setHigh();
-        cli();
         WD::disable();
-        sei();
     } else {
         LED1::setLow();
         LED2::setLow();
         LED3::setLow();
         GATE::setHigh();
-        cli();
         WD::disable();
-        sei();
     }
 }
 

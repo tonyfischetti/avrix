@@ -15,26 +15,85 @@ static constexpr uint8_t get_pin_mask(uint8_t pnum) {
     else                return (1 << 0); // ???
 }
 
+static constexpr uint8_t get_wd_prescaler_bits(uint8_t pow_of_two) {
+/*
+ * pow_of_two time (secs)
+ * 11         0.016
+ * 12         0.032
+ * 13         0.064
+ * 14         0.13
+ * 15         0.26
+ * 16         0.51
+ * 17         1.02
+ * 18         2.04
+ * 19         4.1
+ * 20         8.2
+ */
+    if      (pow_of_two == 11) return 0x00;
+    else if (pow_of_two == 12) return (1 << WDP0);
+    else if (pow_of_two == 13) return (1 << WDP1);
+    else if (pow_of_two == 14) return (1 << WDP1) | (1 << WDP0);
+    else if (pow_of_two == 15) return (1 << WDP2);
+    else if (pow_of_two == 16) return (1 << WDP2) | (1 << WDP0);
+    else if (pow_of_two == 17) return (1 << WDP2) | (1 << WDP1);
+    else if (pow_of_two == 18) return (1 << WDP2) | (1 << WDP1) | (1 << WDP0);
+    else if (pow_of_two == 19) return (1 << WDP3);
+    else if (pow_of_two == 20) return (1 << WDP3) | (1 << WDP0);
+    else                       return (1 << 0); // ???  TODO  can I throw a compile-type exception?!
+}
+
+
 template<uint8_t pinNumber>
 struct GPIO {
     static constexpr uint8_t mask { get_pin_mask(pinNumber) };
 
-    static inline void setHigh()   { PORTB |=  mask; }
-    static inline void setPullup() { PORTB |=  mask; }
-    static inline void setLow()    { PORTB &= ~mask; }
-    static inline void toggle()    { PORTB ^=  mask; }
-    static inline void setOutput() { DDRB  |=  mask; }
-    static inline void setInput()  { DDRB  &= ~mask; }
+    static constexpr void setHigh()   { PORTB |=  mask; }
+    static constexpr void setPullup() { PORTB |=  mask; }
+    static constexpr void setLow()    { PORTB &= ~mask; }
+    static constexpr void toggle()    { PORTB ^=  mask; }
+    static constexpr void setOutput() { DDRB  |=  mask; }
+    static constexpr void setInput()  { DDRB  &= ~mask; }
 
-    static inline bool read() {
+    static constexpr bool read() {
         return PINB & mask;
     }
 
-    static inline void enablePCINT() {
+    static constexpr void enablePCINT() {
         GIMSK |= (1 << PCIE);
         PCMSK |= mask;
     }
 };
+
+
+template<uint8_t prescalerPowOf2>
+struct Watchdog {
+    static constexpr uint8_t prescaler_bits { 
+        get_wd_prescaler_bits(prescalerPowOf2)
+    };
+
+    static constexpr void disable() {
+        MCUSR &= ~(1 << WDRF);
+        WDTCR |= (1 << WDCE) | (1 << WDE);  // start timed sequence
+        WDTCR = 0x00;                       // Disable WDT
+    }
+
+    static constexpr void reset() {
+        MCUSR &= static_cast<uint8_t>(~(1 << WDRF));
+        WDTCR |= (1 << WDCE) | (1 << WDE);
+        WDTCR = (1 << WDE) | prescaler_bits;
+    }
+};
+//  TODO  not great. fix.
+
+
+inline void go_to_sleep(uint8_t mode) {
+    cli();
+    set_sleep_mode(mode);
+    sleep_enable();
+    sei();
+    sleep_cpu();
+    sleep_disable();
+}
 
 
 /**
@@ -85,65 +144,11 @@ struct GPIO {
  *
  */
 
-static constexpr uint8_t get_wd_prescaler_bits(uint8_t pow_of_two) {
-    /*
-     * pow_of_two time (secs)
-     * 11         0.016
-     * 12         0.032
-     * 13         0.064
-     * 14         0.13
-     * 15         0.26
-     * 16         0.51
-     * 17         1.02
-     * 18         2.04
-     * 19         4.1
-     * 20         8.2
-     */
-    if      (pow_of_two == 11) return 0x00;
-    else if (pow_of_two == 12) return (1 << WDP0);
-    else if (pow_of_two == 13) return (1 << WDP1);
-    else if (pow_of_two == 14) return (1 << WDP1) | (1 << WDP0);
-    else if (pow_of_two == 15) return (1 << WDP2);
-    else if (pow_of_two == 16) return (1 << WDP2) | (1 << WDP0);
-    else if (pow_of_two == 17) return (1 << WDP2) | (1 << WDP1);
-    else if (pow_of_two == 18) return (1 << WDP2) | (1 << WDP1) | (1 << WDP0);
-    else if (pow_of_two == 19) return (1 << WDP3);
-    else if (pow_of_two == 20) return (1 << WDP3) | (1 << WDP0);
-    else                       return (1 << 0); // ???  TODO  can I throw a compile-type exception?!
-}
-
-template<uint8_t prescalerPowOf2>
-struct Watchdog {
-    static constexpr uint8_t prescaler_bits { 
-        get_wd_prescaler_bits(prescalerPowOf2)
-    };
-
-    static inline void disable() {
-        cli();
-        MCUSR &= ~(1 << WDRF);
-        WDTCR |= (1 << WDCE) | (1 << WDE);  // start timed sequence
-        WDTCR = 0x00;                       // Disable WDT
-        sei();
-    }
-
-    static inline void reset() {
-        cli();
-        MCUSR &= static_cast<uint8_t>(~(1 << WDRF));
-        WDTCR |= (1 << WDCE) | (1 << WDE);
-        WDTCR = (1 << WDIE) | prescaler_bits;
-        sei();
-    }
-};
-//  TODO  not great. fix.
+inline void reset_watchdog() {
+	cli();
 
 
-inline void go_to_sleep(uint8_t mode) {
-    cli();
-    set_sleep_mode(mode);
-    sleep_enable();
-    sei();
-    sleep_cpu();
-    sleep_disable();
+	sei();
 }
 
 
