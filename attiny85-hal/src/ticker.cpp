@@ -2,6 +2,7 @@
 #include <stdint.h>
 #include <util/atomic.h>
 #include <avr/io.h>
+#include <avr/interrupt.h> 
 
 namespace HAL {
 namespace Ticker {
@@ -24,6 +25,6 @@ namespace Ticker {
 }
 }
 
-ISR(TIM0_COMPA_vect) {
+extern "C" ISR(TIM0_COMPA_vect) {
     HAL::Ticker::ticks++;
 }
