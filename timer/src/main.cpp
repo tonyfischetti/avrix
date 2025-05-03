@@ -1,3 +1,5 @@
+#include "../attiny85-hal/include/hal.hpp"
+
 #include <stdint.h>
 
 #include <avr/io.h>
@@ -5,9 +7,7 @@
 
 #include <util/delay.h>
 
-#include "attiny85-hal/hal.hpp"
 
-using namespace HAL::GPIO;
 
 using LED1 = HAL::GPIO::GPIO<2>;
 using LED2 = HAL::GPIO::GPIO<6>;

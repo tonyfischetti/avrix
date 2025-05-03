@@ -6,6 +6,7 @@ TARGET     := main
 SRC_DIR    := src
 INC_DIR    := include
 BUILD_DIR  := build
+HAL_LOC    := attiny85-hal
 
 CXX        := avr-g++
 OBJCOPY    := avr-objcopy
@@ -14,7 +15,10 @@ AVRDUDE    := avrdude
 PROGRAMMER := usbtiny
 
 SRC        := $(wildcard $(SRC_DIR)/*.cpp)
-CXXFLAGS   := -mmcu=$(MCU) -DF_CPU=$(F_CPU) -I$(INC_DIR)
+SRC        += $(wildcard $(HAL_LOC)/src/*.cpp)
+
+CXXFLAGS   := -mmcu=$(MCU) -DF_CPU=$(F_CPU)
+CXXFLAGS   += -I$(INC_DIR) -I$(HAL_LOC)/include
 CXXFLAGS   += -Os -Wall -std=gnu++17 -ffunction-sections -fdata-sections
 CXXFLAGS   += -Wextra -Wpedantic -Wshadow -Wconversion # -Werror
 CXXFLAGS   += -Wsign-conversion -Wunreachable-code -Weffc++
@@ -25,6 +29,7 @@ CXXFLAGS   += -Wsuggest-override -Wvirtual-move-assign
 CXXFLAGS   += -Wuninitialized -Wswitch-enum -Wswitch
 
 LDFLAGS    := -Wl,--gc-sections
+
 
 all: $(BUILD_DIR)/$(TARGET).hex
 

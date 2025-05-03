@@ -1,3 +1,5 @@
+#include "../attiny85-hal/include/hal.hpp"
+
 #include <stdint.h>
 #include <stdlib.h>
 
@@ -7,15 +9,14 @@
 #include <util/atomic.h>
 #include <util/delay.h>
 
-#include "attiny85-hal.hpp"
 
 
-using GATE = GPIO<5>;
-using SW   = GPIO<3>;
-using LED1 = GPIO<2>;
-using LED2 = GPIO<6>;
-using LED3 = GPIO<7>;
-using WD   = Watchdog<14>;
+using GATE = HAL::GPIO::GPIO<5>;
+using SW   = HAL::GPIO::GPIO<3>;
+using LED1 = HAL::GPIO::GPIO<2>;
+using LED2 = HAL::GPIO::GPIO<6>;
+using LED3 = HAL::GPIO::GPIO<7>;
+using WD   = HAL::Watchdog::Watchdog<14>;
 
 
 volatile uint32_t tick_counter  { 0 };
@@ -114,7 +115,7 @@ int main() {
             move_mode_forward();
         }
 
-        go_to_sleep(SLEEP_MODE_PWR_DOWN);
+        HAL::Sleep::go_to_sleep(SLEEP_MODE_PWR_DOWN);
     }
 
     return 0;
