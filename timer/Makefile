@@ -4,7 +4,7 @@ MCU        := attiny85
 F_CPU      := 1000000UL
 TARGET     := main
 SRC_DIR    := src
-INC_DIR    := ../include
+INC_DIR    := include
 BUILD_DIR  := build
 
 CXX        := avr-g++
@@ -25,6 +25,7 @@ CXXFLAGS   += -Wsuggest-override -Wvirtual-move-assign
 CXXFLAGS   += -Wuninitialized -Wswitch-enum -Wswitch
 
 LDFLAGS    := -Wl,--gc-sections
+
 
 all: $(BUILD_DIR)/$(TARGET).hex
 
