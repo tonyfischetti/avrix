@@ -26,8 +26,8 @@ class PCINTDebouncer {
         lastChangeTime { 0 } {
         self = this;
     }
-
-    static void onISRTriggered(bool state) {
+    
+    __attribute__((always_inline)) inline static void onISRTriggered(bool state) {
         if (self) {
             self->rawState = state;
             self->interruptedP = true;
@@ -35,11 +35,17 @@ class PCINTDebouncer {
     }
 
     bool hasUpdate() {
-        if (!interruptedP) return false;
+        bool wasInterrupted;
+
+        ATOMIC_BLOCK(ATOMIC_RESTORESTATE) {
+            wasInterrupted = interruptedP;
+            interruptedP = false;
+        }
+
+        if (!wasInterrupted) return false;
 
         interruptedP = false;
-        // uint32_t now = HAL::Ticker::get_ticks();
-        uint32_t now = 1;
+        uint32_t now = HAL::Ticker::get_ticks();
 
         if (rawState != stableState && ((now - lastChangeTime) >= debounce_delay_ms)) {
 

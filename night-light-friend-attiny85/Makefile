@@ -15,7 +15,7 @@ AVRDUDE    := avrdude
 PROGRAMMER := usbtiny
 
 SRC        := $(wildcard $(SRC_DIR)/*.cpp)
-# SRC        += $(wildcard $(HAL_LOC)/src/*.cpp)
+SRC        += $(wildcard $(HAL_LOC)/src/*.cpp)
 
 CXXFLAGS   := -mmcu=$(MCU) -DF_CPU=$(F_CPU)
 CXXFLAGS   += -I$(INC_DIR) -I$(HAL_LOC)/include
