@@ -26,7 +26,7 @@ class PCINTDebouncer {
         lastChangeTime { 0 } {
         self = this;
     }
-    
+
     __attribute__((always_inline)) inline static void onISRTriggered(bool state) {
         if (self) {
             self->rawState = state;
