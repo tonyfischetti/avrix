@@ -3,7 +3,8 @@
 -std=gnu++17
 -xc++
 -Os
--Iinclude -Iavr-hal/include
+-Iinclude
+-I../avr-hal/include
 
 # debian
 -I/usr/lib/avr/include

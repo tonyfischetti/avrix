@@ -1,4 +1,4 @@
-#include "../avr-hal/include/hal.hpp"
+#include "avr-hal.hpp"
 
 #include <stdint.h>
 #include <stdlib.h>

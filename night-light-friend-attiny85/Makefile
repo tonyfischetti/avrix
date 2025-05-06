@@ -6,7 +6,7 @@ TARGET     := main
 SRC_DIR    := src
 INC_DIR    := include
 BUILD_DIR  := build
-HAL_LOC    := avr-hal
+HAL_LOC    := ../avr-hal
 
 CXX        := avr-g++
 OBJCOPY    := avr-objcopy
