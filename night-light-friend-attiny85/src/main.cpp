@@ -9,6 +9,8 @@
 #include <util/atomic.h>
 #include <util/delay.h>
 
+#include "PCINTDebouncer.hpp"
+
 
 
 using GATE = HAL::GPIO::GPIO<5>;
@@ -18,6 +20,7 @@ using LED3 = HAL::GPIO::GPIO<7>;
 using WD   = HAL::Watchdog::Watchdog<14>;
 
 HAL::GPIO::GPIO<3> SW;
+PCINTDebouncer SW_D(true, 200);
 
 
 volatile bool timeToFlickerP  { false };
@@ -34,17 +37,14 @@ ISR(WDT_vect) {
 }
 
 ISR(PCINT0_vect) {
+    uint8_t now = HAL::Ticker::getNumTicks();
     uint8_t current = PINB;
     uint8_t changed = current ^ previousPINB;
     previousPINB = current;
 
-
-    // pin3ChangedP = true;
-
     //  TODO  hardcoded for debugging
     if (changed & (1 << 4)) {
-        pin3ChangedP = true;
-        // SW_D.onISRTriggered((current & (1 << 3)) != 0);
+        pin3ChangedP = SW_D.registerInterrupt(now, (current & (1 << 4)) > 0);
     }
 
 }
@@ -65,18 +65,14 @@ void flicker() {
     else                             LED3::setLow();
 }
 
+
 void start_sequence() {
-    _delay_ms(500);
-    LED1::setHigh();
-    _delay_ms(500);
-    LED2::setHigh();
-    _delay_ms(500);
-    LED3::setHigh();
-    _delay_ms(500);
-    LED1::setLow();
-    LED2::setLow();
-    LED3::setLow();
+    _delay_ms(500); LED1::setHigh();
+    _delay_ms(500); LED2::setHigh();
+    _delay_ms(500); LED3::setHigh();
+    _delay_ms(500); LED1::setLow(); LED2::setLow(); LED3::setLow();
 }
+
 
 void moveModeForward() {
     mode = static_cast<uint8_t>((mode + 1) % 3);
@@ -98,6 +94,7 @@ void moveModeForward() {
         WD::disable();
     }
 }
+
 
 int main() {
 
@@ -125,9 +122,7 @@ int main() {
 
         if (pin3ChangedP) {
             pin3ChangedP = false;
-            uint32_t now = HAL::Ticker::getNumTicks();
-            if ((now - lastChange) > 200) {
-                lastChange = now;
+            if (!SW_D.status()) {
                 moveModeForward();
             }
         }
