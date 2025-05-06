@@ -16,7 +16,7 @@ class PCINTDebouncer {
     }
 
     bool registerInterrupt(uint8_t when, bool rawState) {
-        if ((when - lastChangeTime) > lockOutPeriod) {
+        if ((uint32_t)(when - lastChangeTime) > lockOutPeriod) {
             if (rawState == stableState)
                 return false;
             stableState = rawState;

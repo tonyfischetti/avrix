@@ -20,7 +20,7 @@ using LED3 = HAL::GPIO::GPIO<7>;
 using WD   = HAL::Watchdog::Watchdog<14>;
 
 HAL::GPIO::GPIO<3> SW;
-PCINTDebouncer SW_D(true, 200);
+PCINTDebouncer SW_D(true, 20);
 
 
 volatile bool timeToFlickerP  { false };
@@ -37,16 +37,14 @@ ISR(WDT_vect) {
 }
 
 ISR(PCINT0_vect) {
-    uint8_t now = HAL::Ticker::getNumTicks();
+    uint32_t now = HAL::Ticker::getNumTicks();
     uint8_t current = PINB;
     uint8_t changed = current ^ previousPINB;
     previousPINB = current;
 
-    //  TODO  hardcoded for debugging
     if (changed & (1 << 4)) {
         pin3ChangedP = SW_D.registerInterrupt(now, (current & (1 << 4)) > 0);
     }
-
 }
 
 
