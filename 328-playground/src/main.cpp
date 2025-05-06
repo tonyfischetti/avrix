@@ -1,4 +1,4 @@
-#include "../atmega328-hal/include/hal.hpp"
+#include "../avr-hal/include/hal.hpp"
 
 #include <avr/io.h>
 #include <avr/interrupt.h>
@@ -10,8 +10,10 @@
 // (_F_CPU/16/BAUD-1)
 //
 
-volatile bool button_pressed_p { false };
+volatile bool buttonPressedP  { false };
+volatile uint32_t lastPressed { 0     };
 volatile bool watchdogBarkedP { false };
+
 
 using RE_SW   = HAL::GPIO::GPIO<4>;
 using LED0    = HAL::GPIO::GPIO<15>;
@@ -25,11 +27,7 @@ using RE_CLK  = HAL::GPIO::GPIO<5>;
 using RE_DATA = HAL::GPIO::GPIO<6>;
 using Button  = HAL::GPIO::GPIO<14>;
 
-using WD   = HAL::Watchdog::Watchdog<19>;
-
-ISR(WDT_vect) {
-    watchdogBarkedP = true;
-}
+// using WD   = HAL::Watchdog::Watchdog<19>;
 
 
 void uart_init(unsigned int ubrr) {
@@ -65,8 +63,13 @@ void uart_print(char* str) {
 
 
 ISR(PCINT2_vect) {
-    button_pressed_p = true;
+    buttonPressedP = true;
 }
+
+// ISR(WDT_vect) {
+//     watchdogBarkedP = true;
+// }
+
 
 
 static char alice[] = "::alice glass:: HI!\r\n";
@@ -110,7 +113,7 @@ int main(void) {
 
     RE_SW::enablePCINT();
     
-    WD::reset();
+    // WD::reset();
     
     HAL::Ticker::setupMSTimer();
 
@@ -121,30 +124,17 @@ int main(void) {
     uart_print(es);
 
     while (1) {
-        if (button_pressed_p) {
-            button_pressed_p = false;
-            uart_print(yes);
-            LED0::setHigh();
-        }
-        else {
-            LED0::setLow();
-            uart_print(no);
-        }
-        _delay_ms(1000);
 
-        if (watchdogBarkedP) {
-            WD::reset();
-            watchdogBarkedP = false;
-            LED1::setHigh();
-            _delay_ms(1000);
-            LED1::setLow();
+        if (buttonPressedP) {
+            buttonPressedP = false;
+            uint32_t now = HAL::Ticker::getNumTicks();
+            if ((now - lastPressed) > 250) {
+                lastPressed = now;
+                uart_print(yes);
+                LED0::toggle();
+            }
         }
 
-        uint32_t numSeconds = HAL::Ticker::getNumTicks() / 1000;
-        for (auto i = 0; i < numSeconds; i++) {
-            uart_print(period);
-        }
-        uart_print(newline);
     }
     return 0;
 }

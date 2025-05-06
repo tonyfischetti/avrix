@@ -1,14 +1,13 @@
-#include "../attiny85-hal/include/hal.hpp"
+#include "../avr-hal/include/hal.hpp"
 
 #include <stdint.h>
+#include <stdlib.h>
 
 #include <avr/io.h>
 #include <avr/power.h>
 
 #include <util/atomic.h>
 #include <util/delay.h>
-
-#include "PCINTDebouncer.hpp"
 
 
 
@@ -19,29 +18,51 @@ using LED3 = HAL::GPIO::GPIO<7>;
 using WD   = HAL::Watchdog::Watchdog<14>;
 
 HAL::GPIO::GPIO<3> SW;
-PCINTDebouncer<HAL::GPIO::GPIO<3>> SW_D(SW, true);
 
 
-volatile bool flicker_time_p    { false };
-volatile uint8_t previous_pinb  { 0xFF  };
-uint8_t mode                    { 0x00  };
+volatile bool timeToFlickerP  { false };
+volatile uint8_t previousPINB { 0xFF  };
+uint8_t mode                  { 0x00  };
 
-volatile bool pin_3_changed { false };
+volatile bool pin3ChangedP { false };
+uint32_t lastChange { 0 };
+
+
+
+ISR(WDT_vect) {
+    timeToFlickerP = true;
+}
 
 ISR(PCINT0_vect) {
-    __asm__ __volatile__ ("" ::: "memory");
-    for (volatile uint8_t i = 0; i < 10; ++i);
     uint8_t current = PINB;
-    uint8_t changed = current ^ previous_pinb;
-    previous_pinb = current;
+    uint8_t changed = current ^ previousPINB;
+    previousPINB = current;
+
+
+    // pin3ChangedP = true;
 
     //  TODO  hardcoded for debugging
-    if (changed & (1 << 3)) {
-        pin_3_changed = true;
-        // LED1::toggle();
+    if (changed & (1 << 4)) {
+        pin3ChangedP = true;
         // SW_D.onISRTriggered((current & (1 << 3)) != 0);
     }
 
+}
+
+
+void flicker() {
+    static uint8_t currentRand { 0 };
+    timeToFlickerP = false;
+
+    currentRand = static_cast<uint8_t>(rand());
+
+    if ((currentRand & (0x03) << 0)) LED1::setHigh();
+    else                             LED1::setLow();
+    if ((currentRand & (0x03) << 2)) LED2::setHigh();
+    else                             LED2::setLow();
+    if ((currentRand & (0x03) << 4) ||
+       !(currentRand & (0x0f)))      LED3::setHigh();
+    else                             LED3::setLow();
 }
 
 void start_sequence() {
@@ -57,6 +78,26 @@ void start_sequence() {
     LED3::setLow();
 }
 
+void moveModeForward() {
+    mode = static_cast<uint8_t>((mode + 1) % 3);
+    //  TODO  use switch/case
+    if (!mode) {
+        GATE::setLow();
+        WD::reset();
+    } else if (mode == 1) {
+        GATE::setLow();
+        LED1::setHigh();
+        LED2::setHigh();
+        LED3::setHigh();
+        WD::disable();
+    } else {
+        LED1::setLow();
+        LED2::setLow();
+        LED3::setLow();
+        GATE::setHigh();
+        WD::disable();
+    }
+}
 
 int main() {
 
@@ -70,21 +111,28 @@ int main() {
     SW.enablePCINT();
 
     start_sequence();
-    HAL::Ticker::setup_ms_timer();
+
+    HAL::Ticker::setupMSTimer();
+    WD::reset();
     sei();
 
     while (1) {
 
-        if (pin_3_changed) {
-            pin_3_changed = false;
-            LED1::toggle();
-            SW_D.onISRTriggered((PINB & (1 << 3)) != 0);
+        if (!mode) {
+            if (timeToFlickerP) flicker();
+            WD::reset();
         }
 
-        if (SW_D.hasUpdate()) {
-            if (!SW_D.state())
-                LED3::toggle();
+        if (pin3ChangedP) {
+            pin3ChangedP = false;
+            uint32_t now = HAL::Ticker::getNumTicks();
+            if ((now - lastChange) > 200) {
+                lastChange = now;
+                moveModeForward();
+            }
         }
+
+        HAL::Sleep::goToSleep(SLEEP_MODE_IDLE);
 
     }
 

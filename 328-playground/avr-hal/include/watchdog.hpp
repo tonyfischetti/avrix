@@ -1,5 +1,7 @@
 #pragma once
 
+#include "hal_common.hpp"
+
 #include <stdint.h>
 
 #include <avr/interrupt.h>
@@ -96,16 +98,27 @@ struct Watchdog {
     static inline void disable() {
         cli();
         MCUSR &= ~(1 << WDRF);
+#if defined(__AVR_ATtiny85__)
+        WDTCR |= (1 << WDCE) | (1 << WDE);
+        WDTCR = 0x00;
+#elif defined(__AVR_ATmega328P__)
         WDTCSR |= (1 << WDCE) | (1 << WDE);  // start timed sequence
         WDTCSR = 0x00;                       // Disable WDT
+#endif
+
         sei();
     }
 
     static inline void reset() {
         cli();
         MCUSR &= static_cast<uint8_t>(~(1 << WDRF));
+#if defined(__AVR_ATtiny85__)
+        WDTCR |= (1 << WDCE) | (1 << WDE);
+        WDTCR = (1 << WDIE) | prescaler_bits;
+#elif defined(__AVR_ATmega328P__)
         WDTCSR |= (1 << WDCE) | (1 << WDE);
         WDTCSR = (1 << WDIE) | prescaler_bits;
+#endif
         sei();
     }
 };

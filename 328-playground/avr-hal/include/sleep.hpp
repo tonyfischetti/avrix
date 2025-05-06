@@ -1,5 +1,7 @@
 #pragma once
 
+#include "hal_common.hpp"
+
 #include <avr/io.h>
 #include <avr/sleep.h>
 #include <avr/interrupt.h>

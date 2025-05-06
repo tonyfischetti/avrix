@@ -1,5 +1,6 @@
 #pragma once
 
+#include "hal_common.hpp"
 #include <stdint.h>
 
 #include <avr/interrupt.h>
@@ -19,8 +20,7 @@ struct PinInfo {
     uint8_t pcicr_bit;
 };
 
-constexpr PinInfo pin_table[29] = {
-    { Port::Invalid, 0, 0xFF, 0xFF }, //  0
+constexpr PinInfo pin_table[28] = {
     { Port::Invalid, 0, 0xFF, 0xFF }, //  1 RESET
     { Port::D, 0, 16, PCIE2 },        //  2 PD0
     { Port::D, 1, 17, PCIE2 },        //  3 PD1
@@ -70,11 +70,10 @@ inline PinRegisters resolveRegisters(Port port) {
 
 template<uint8_t physicalPin>
 struct GPIO {
-    static_assert(physicalPin < 28 || physicalPin > 0,
+    static_assert(physicalPin < 29 || physicalPin > 0,
             "Invalid pin number for ATMega328P"); //  TODO  
 
-    static constexpr PinInfo info = pin_table[physicalPin];
-    // static_assert(info.port != Port::Invalid, "Invalid GPIO pin");
+    static constexpr PinInfo info = pin_table[physicalPin-1];
 
     static inline PinRegisters regs = resolveRegisters(info.port);
     static inline uint8_t mask = (1 << info.bit);

@@ -1,5 +1,7 @@
 #pragma once
 
+#include "hal_common.hpp"
+
 #include <stdint.h>
 
 #include <avr/interrupt.h>
@@ -58,7 +60,7 @@
 namespace HAL {
 namespace Watchdog {
 
-static constexpr uint8_t get_wd_prescaler_bits(uint8_t pow_of_two) {
+static constexpr uint8_t getWDPrescalerBits(uint8_t powOfTwo) {
     /*
      * pow_of_two time (secs)
      * 11         0.016
@@ -72,16 +74,16 @@ static constexpr uint8_t get_wd_prescaler_bits(uint8_t pow_of_two) {
      * 19         4.1
      * 20         8.2
      */
-    if      (pow_of_two == 11) return 0x00;
-    else if (pow_of_two == 12) return (1 << WDP0);
-    else if (pow_of_two == 13) return (1 << WDP1);
-    else if (pow_of_two == 14) return (1 << WDP1) | (1 << WDP0);
-    else if (pow_of_two == 15) return (1 << WDP2);
-    else if (pow_of_two == 16) return (1 << WDP2) | (1 << WDP0);
-    else if (pow_of_two == 17) return (1 << WDP2) | (1 << WDP1);
-    else if (pow_of_two == 18) return (1 << WDP2) | (1 << WDP1) | (1 << WDP0);
-    else if (pow_of_two == 19) return (1 << WDP3);
-    else if (pow_of_two == 20) return (1 << WDP3) | (1 << WDP0);
+    if      (powOfTwo == 11) return 0x00;
+    else if (powOfTwo == 12) return (1 << WDP0);
+    else if (powOfTwo == 13) return (1 << WDP1);
+    else if (powOfTwo == 14) return (1 << WDP1) | (1 << WDP0);
+    else if (powOfTwo == 15) return (1 << WDP2);
+    else if (powOfTwo == 16) return (1 << WDP2) | (1 << WDP0);
+    else if (powOfTwo == 17) return (1 << WDP2) | (1 << WDP1);
+    else if (powOfTwo == 18) return (1 << WDP2) | (1 << WDP1) | (1 << WDP0);
+    else if (powOfTwo == 19) return (1 << WDP3);
+    else if (powOfTwo == 20) return (1 << WDP3) | (1 << WDP0);
     else                       return (1 << 0); // ???
 }
 
@@ -90,22 +92,33 @@ struct Watchdog {
     static_assert(prescalerPowOf2 <= 20 && prescalerPowOf2 >= 11,
             "invalid prescaler value");
     static constexpr uint8_t prescaler_bits { 
-        get_wd_prescaler_bits(prescalerPowOf2)
+        getWDPrescalerBits(prescalerPowOf2)
     };
 
     static inline void disable() {
         cli();
         MCUSR &= ~(1 << WDRF);
+#if defined(__AVR_ATtiny85__)
         WDTCR |= (1 << WDCE) | (1 << WDE);
         WDTCR = 0x00;
+#elif defined(__AVR_ATmega328P__)
+        WDTCSR |= (1 << WDCE) | (1 << WDE);  // start timed sequence
+        WDTCSR = 0x00;                       // Disable WDT
+#endif
+
         sei();
     }
 
     static inline void reset() {
         cli();
         MCUSR &= static_cast<uint8_t>(~(1 << WDRF));
+#if defined(__AVR_ATtiny85__)
         WDTCR |= (1 << WDCE) | (1 << WDE);
         WDTCR = (1 << WDIE) | prescaler_bits;
+#elif defined(__AVR_ATmega328P__)
+        WDTCSR |= (1 << WDCE) | (1 << WDE);
+        WDTCSR = (1 << WDIE) | prescaler_bits;
+#endif
         sei();
     }
 };
