@@ -8,7 +8,7 @@ TARGET     := main
 SRC_DIR    := src
 INC_DIR    := include
 BUILD_DIR  := build
-PORT 	   := /dev/cu.usbserial-B0004H20
+HAL_LOC    := avr-hal
 
 CXX        := avr-g++
 OBJCOPY    := avr-objcopy
@@ -17,8 +17,10 @@ AVRDUDE    := avrdude
 PROGRAMMER := usbtiny
 
 SRC        := $(wildcard $(SRC_DIR)/*.cpp)
+SRC        += $(wildcard $(HAL_LOC)/src/*.cpp)
+
 CXXFLAGS   := -mmcu=$(MCU) -DF_CPU=$(F_CPU)
-CXXFLAGS   += -I$(INC_DIR)
+CXXFLAGS   += -I$(INC_DIR) -I$(HAL_LOC)/include
 CXXFLAGS   += -Os -Wall -std=gnu++17 -ffunction-sections -fdata-sections
 CXXFLAGS   += -Wextra -Wpedantic -Wshadow -Wconversion # -Werror
 CXXFLAGS   += -Wsign-conversion -Wunreachable-code -Weffc++

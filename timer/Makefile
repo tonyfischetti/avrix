@@ -1,14 +1,12 @@
 .DELETE_ON_ERROR:
 
-MCU        := atmega328p
-MCUAVRD    := m328p
-F_CPU      := 16000000UL
-BAUD       := 9600
+MCU        := attiny85
+F_CPU      := 1000000UL
 TARGET     := main
 SRC_DIR    := src
 INC_DIR    := include
 BUILD_DIR  := build
-PORT 	   := /dev/cu.usbserial-B0004H20
+HAL_LOC    := attiny85-hal
 
 CXX        := avr-g++
 OBJCOPY    := avr-objcopy
@@ -17,8 +15,9 @@ AVRDUDE    := avrdude
 PROGRAMMER := usbtiny
 
 SRC        := $(wildcard $(SRC_DIR)/*.cpp)
+
 CXXFLAGS   := -mmcu=$(MCU) -DF_CPU=$(F_CPU)
-CXXFLAGS   += -I$(INC_DIR)
+CXXFLAGS   += -I$(INC_DIR) -I$(HAL_LOC)/include
 CXXFLAGS   += -Os -Wall -std=gnu++17 -ffunction-sections -fdata-sections
 CXXFLAGS   += -Wextra -Wpedantic -Wshadow -Wconversion # -Werror
 CXXFLAGS   += -Wsign-conversion -Wunreachable-code -Weffc++
@@ -29,6 +28,7 @@ CXXFLAGS   += -Wsuggest-override -Wvirtual-move-assign
 CXXFLAGS   += -Wuninitialized -Wswitch-enum -Wswitch
 
 LDFLAGS    := -Wl,--gc-sections
+
 
 all: $(BUILD_DIR)/$(TARGET).hex
 
@@ -42,13 +42,12 @@ $(BUILD_DIR)/%.hex: $(BUILD_DIR)/%.elf
 
 .PHONY: flash
 flash: $(BUILD_DIR)/$(TARGET).hex
-	$(AVRDUDE) -c $(PROGRAMMER) -p $(MCUAVRD) -U flash:w:$<:i
+	$(AVRDUDE) -c $(PROGRAMMER) -p $(MCU) -U flash:w:$<:i
 
 .PHONY: fuses
 fuses:
-	avrdude -c $(PROGRAMMER) -p $(MCUAVRD) -U lfuse:w:0xD6:m -U hfuse:w:0xD9:m -U efuse:w:0xFF:m  # external crystal
-# avrdude -c $(PROGRAMMER) -p $(MCUAVRD) -U lfuse:w:0x62:m -U hfuse:w:0xD9:m -U efuse:w:0xFF:m  # 1MHz
-# avrdude -c $(PROGRAMMER) -p $(MCUAVRD) -U lfuse:w:0xE2:m -U hfuse:w:0xD9:m -U efuse:w:0xFF:m  # 8MHz
+	avrdude -c $(PROGRAMMER) -p $(MCU) -U lfuse:w:0x62:m -U hfuse:w:0xDF:m -U efuse:w:0xFF:m # 1 MHz
+# avrdude -c $(PROGRAMMER) -p $(MCU) -U lfuse:w:0xE2:m -U hfuse:w:0xDF:m -U efuse:w:0xFF:m # 8 MHz
 
 .PHONY: clean
 clean:
