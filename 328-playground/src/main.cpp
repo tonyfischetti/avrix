@@ -33,15 +33,15 @@ using Button  = HAL::GPIO::GPIO<14>;
 HAL::GPIO::GPIO<4> RE_SW;
 
 
-enum class Signal : uint8_t { RISING, FALLING, NONE };
+enum class Transition : uint8_t { RISING, FALLING, NONE };
 
 
 template<uint8_t physicalPin>
-class ActiveToggleDebouncer {
+class TransitionDebouncer {
 
     // fix this <4> nonsense
     const HAL::GPIO::GPIO<physicalPin>& gpio;
-    const bool active;
+    const bool initial;
     // parameterize
     const uint32_t debounceWaitTime;
     bool stableState;
@@ -49,26 +49,28 @@ class ActiveToggleDebouncer {
   public:
     volatile uint32_t lastUnprocessedInterrupt;
 
-    ActiveToggleDebouncer(HAL::GPIO::GPIO<physicalPin>& _gpio, bool _active, uint32_t _debounceWaitTime)
+    TransitionDebouncer(HAL::GPIO::GPIO<physicalPin>& _gpio, bool _initial, uint32_t _debounceWaitTime)
         : gpio { _gpio },
-          active { _active },
+          initial { _initial },
           debounceWaitTime { _debounceWaitTime },
           // for now
-          stableState { !_active },
+          stableState { _initial },
           lastUnprocessedInterrupt { 0 } {
     }
 
-    Signal processAnyInterrupts() {
-        Signal transistion { Signal::NONE };
+    Transition processAnyInterrupts() {
+        Transition transistion { Transition::NONE };
         if (lastUnprocessedInterrupt > 0) {
             uint32_t now = HAL::Ticker::getNumTicks();
             if (((uint32_t)(now - lastUnprocessedInterrupt)) >= debounceWaitTime) {
                 bool nowState = gpio.read();
 
                 if (nowState && !stableState)
-                    transistion = Signal::RISING;
+                    transistion = Transition::RISING;
                 else if (!nowState && stableState)
-                    transistion = Signal::FALLING;
+                    transistion = Transition::FALLING;
+
+                stableState = nowState;
 
                 lastUnprocessedInterrupt = 0;
             }
@@ -77,7 +79,7 @@ class ActiveToggleDebouncer {
     }
 };
 
-ActiveToggleDebouncer<4> sw(RE_SW, LOW, 75);
+TransitionDebouncer<4> sw(RE_SW, LOW, 75);
 
 
 
@@ -161,10 +163,10 @@ int main(void) {
     while (1) {
 
         switch (sw.processAnyInterrupts()) {
-            case Signal::RISING:
+            case Transition::RISING:
                 LED0::toggle();
                 break;
-            case Signal::FALLING:
+            case Transition::FALLING:
                 break;
             default:
                 break;
