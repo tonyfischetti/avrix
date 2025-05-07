@@ -55,6 +55,28 @@ static struct LatestRawEvent tmp = { 1, 0 };
 static struct FallingDebouncer SW_FD = { true, tmp, 0, 30, 0 };
 
 
+
+struct DBouncer {
+    const HAL::GPIO::GPIO<4>& gpio;
+    // parameterize
+    const uint32_t debounceWaitTime;
+    volatile uint32_t lastUnprocessedInterrupt;
+    // needs to be volatile?
+    bool stableState;
+
+    DBouncer(HAL::GPIO::GPIO<4>& _gpio, uint32_t _debounceWaitTime)
+        : gpio { _gpio },
+          debounceWaitTime { _debounceWaitTime },
+          // for now
+          stableState { true },
+          lastUnprocessedInterrupt { 0 } {
+    }
+};
+
+DBouncer swnew(RE_SW, 75);
+
+
+
 ISR(PCINT2_vect) {
     uint8_t current = PIND;
     uint32_t now = HAL::Ticker::getNumTicks();
@@ -69,8 +91,8 @@ ISR(PCINT2_vect) {
         // the idea is to wait _x_ amount of milliseconds _after_ the
         // first PCINT (bounce 0) and then take the level then and
         // treat it as fact
-        if (SW_FD.wasInterrupted == 0) {
-            SW_FD.wasInterrupted = now;
+        if (!swnew.lastUnprocessedInterrupt) {
+            swnew.lastUnprocessedInterrupt = now;
         }
     }
 }
@@ -107,6 +129,8 @@ void start_sequence() {
 }
 
 
+
+
 int main(void) {
 
 
@@ -139,55 +163,34 @@ int main(void) {
     HAL::UART::print(alice);
 
 
+
+
     while (1) {
 
-        if (SW_FD.wasInterrupted > 0) {
-            uint32_t when = SW_FD.wasInterrupted;
+        // if (swnew.newState()) {
+
+        if (swnew.lastUnprocessedInterrupt > 0) {
+            uint32_t when = swnew.lastUnprocessedInterrupt;
             uint32_t now = HAL::Ticker::getNumTicks();
-            if (((uint32_t)(now - when)) >= 50) {
-                bool nowState = RE_SW.read();
+            if (((uint32_t)(now - when)) >= swnew.debounceWaitTime) {
+                bool nowState = swnew.gpio.read();
                 if (!nowState) {
-                    SW_FD.stableState = !SW_FD.stableState;
+                    swnew.stableState = !swnew.stableState;
                 }
-                SW_FD.wasInterrupted = 0;
+                swnew.lastUnprocessedInterrupt = 0;
             }
         }
 
 
-        if (SW_FD.stableState)
+        if (swnew.stableState)
             LED0::setHigh();
         else
             LED0::setLow();
 
-        // if (SW_FD.wasInterrupted) {
-        //     if (SW_FD.rawState != SW_FD.stableState) {
-        //         SW_FD.wasInterrupted = false;
-        //         uint32_t now = HAL::Ticker::getNumTicks();
-        //         if ((uint32_t)(now - SW_FD.lastStateChange) >= SW_FD.timeOutPeriod) {
-        //             // fd.numTimesFell = fd.numTimesFell+1;
-        //             SW_FD.lastStateChange = now;
-        //             SW_FD.stableState = SW_FD.rawState;
-        //             SW_FD.rawState = true;
-        //             // HAL::UART::println("debounced!");
-        //             if (SW_FD.stableState == 0)
-        //                 LED0::toggle();
-        //         }
-        //     }
-        // }
 
-        // if (buttonPressedP) {
-        //     buttonPressedP = false;
-        //     if (!RE_SW_D.status()) {
-        //         LED0::toggle();
-        //         HAL::UART::print(yes);
-        //     }
-        // }
-        // if (reChangedP) {
-        //     reChangedP = false;
-        //     if (!RE_CLK_D.status()) {
-        //         LED3::toggle();
-        //     }
-        // }
+        // doesn't work
+        // HAL::Sleep::goToSleep(SLEEP_MODE_PWR_DOWN);
+
 
     }
     return 0;
