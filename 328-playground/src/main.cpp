@@ -61,7 +61,14 @@ ISR(PCINT2_vect) {
     uint8_t changed = current ^ previousPIND;
     previousPIND = current;
 
+    // the pin changed in some way since last interrupt
     if (changed & (1 << 2)) {
+        // if there were a previous interrupt and it was not handled outside
+        // the ISR, we don't want to update the interrupt time
+        //
+        // the idea is to wait _x_ amount of milliseconds _after_ the
+        // first PCINT (bounce 0) and then take the level then and
+        // treat it as fact
         if (SW_FD.wasInterrupted == 0) {
             SW_FD.wasInterrupted = now;
         }
