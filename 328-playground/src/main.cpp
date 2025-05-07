@@ -31,43 +31,21 @@ using Button  = HAL::GPIO::GPIO<14>;
 // using WD   = HAL::Watchdog::Watchdog<19>;
 
 HAL::GPIO::GPIO<4> RE_SW;
-// PCINTDebouncer RE_SW_D(true, 20);
 
-// HAL::GPIO::GPIO<5> RE_CLK;
-// PCINTDebouncer RE_CLK_D(true, 20);
+template<uint8_t physicalPin>
+class DBouncer {
 
-
-struct LatestRawEvent {
-    volatile bool rawState;
-    volatile uint32_t when;
-};
-
-struct FallingDebouncer {
-    volatile bool stableState;
-    volatile struct LatestRawEvent latestRawEvent;
-    volatile uint32_t lastStateChange;
-    // parameterize type
-    volatile uint16_t timeOutPeriod;
-    volatile uint32_t wasInterrupted;
-};
-
-static struct LatestRawEvent tmp = { 1, 0 };
-static struct FallingDebouncer SW_FD = { true, tmp, 0, 30, 0 };
-
-
-#define HIGH true
-#define LOW false
-
-struct DBouncer {
-    const HAL::GPIO::GPIO<4>& gpio;
+    // fix this <4> nonsense
+    const HAL::GPIO::GPIO<physicalPin>& gpio;
     const bool active;
     // parameterize
     const uint32_t debounceWaitTime;
-    volatile uint32_t lastUnprocessedInterrupt;
-    // needs to be volatile?
     bool stableState;
 
-    DBouncer(HAL::GPIO::GPIO<4>& _gpio, bool _active, uint32_t _debounceWaitTime)
+  public:
+    volatile uint32_t lastUnprocessedInterrupt;
+
+    DBouncer(HAL::GPIO::GPIO<physicalPin>& _gpio, bool _active, uint32_t _debounceWaitTime)
         : gpio { _gpio },
           active { _active },
           debounceWaitTime { _debounceWaitTime },
@@ -94,16 +72,7 @@ struct DBouncer {
     }
 };
 
-/*
-                bool nowState = swnew.gpio.read();
-                if (!nowState) {
-                    swnew.stableState = !swnew.stableState;
-                }
-                swnew.lastUnprocessedInterrupt = 0;
-*/
-
-
-DBouncer swnew(RE_SW, LOW, 75);
+DBouncer<4> sw(RE_SW, LOW, 75);
 
 
 
@@ -121,8 +90,8 @@ ISR(PCINT2_vect) {
         // the idea is to wait _x_ amount of milliseconds _after_ the
         // first PCINT (bounce 0) and then take the level then and
         // treat it as fact
-        if (!swnew.lastUnprocessedInterrupt) {
-            swnew.lastUnprocessedInterrupt = now;
+        if (!sw.lastUnprocessedInterrupt) {
+            sw.lastUnprocessedInterrupt = now;
         }
     }
 }
@@ -137,25 +106,14 @@ ISR(PCINT2_vect) {
 
 
 
-static char alice[] = "::alice glass:: HI!\r\n";
-static char es[] = "exit setup\r\n";
-static char yes[] = "p!\r\n";
-static char no[] = "!p\r\n";
-static char period[] = ".";
-static char newline[] = "\n";
+static char alice[] = "::alice glass:: HI!\n";
 
 
 void start_sequence() {
-    _delay_ms(250);
-    LED1::setHigh();
-    _delay_ms(250);
-    LED2::setHigh();
-    _delay_ms(250);
-    LED3::setHigh();
-    _delay_ms(250);
-    LED1::setLow();
-    LED2::setLow();
-    LED3::setLow();
+    _delay_ms(250); LED1::setHigh();
+    _delay_ms(250); LED2::setHigh();
+    _delay_ms(250); LED3::setHigh();
+    _delay_ms(250); LED1::setLow(); LED2::setLow(); LED3::setLow();
 }
 
 
@@ -197,27 +155,9 @@ int main(void) {
 
     while (1) {
 
-        if (swnew.processAnyInterrupts()) {
+        if (sw.processAnyInterrupts()) {
             LED0::toggle();
         }
-
-        // if (swnew.lastUnprocessedInterrupt > 0) {
-        //     uint32_t when = swnew.lastUnprocessedInterrupt;
-        //     uint32_t now = HAL::Ticker::getNumTicks();
-        //     if (((uint32_t)(now - when)) >= swnew.debounceWaitTime) {
-        //         bool nowState = swnew.gpio.read();
-        //         if (!nowState) {
-        //             swnew.stableState = !swnew.stableState;
-        //         }
-        //         swnew.lastUnprocessedInterrupt = 0;
-        //     }
-        // }
-
-
-        // if (swnew.stableState)
-        //     LED0::setHigh();
-        // else
-        //     LED0::setLow();
 
 
         // doesn't work
