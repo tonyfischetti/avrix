@@ -16,6 +16,8 @@ volatile bool buttonPressedP  { false };
 volatile bool reChangedP { false };
 
 
+uint8_t numLEDs { 0 };
+
 
 using LED0    = HAL::GPIO::GPIO<15>;
 using LED1    = HAL::GPIO::GPIO<25>;
@@ -31,7 +33,7 @@ using Button  = HAL::GPIO::GPIO<14>;
 // using WD   = HAL::Watchdog::Watchdog<19>;
 
 HAL::GPIO::GPIO<4> RE_SW;
-
+HAL::GPIO::GPIO<5> RE_CLK;
 
 enum class Transition : uint8_t { RISING, FALLING, NONE };
 
@@ -41,7 +43,6 @@ class TransitionDebouncer {
 
     // fix this <4> nonsense
     const HAL::GPIO::GPIO<physicalPin>& gpio;
-    const bool initial;
     // parameterize
     const uint32_t debounceWaitTime;
     bool stableState;
@@ -51,9 +52,7 @@ class TransitionDebouncer {
 
     TransitionDebouncer(HAL::GPIO::GPIO<physicalPin>& _gpio, bool _initial, uint32_t _debounceWaitTime)
         : gpio { _gpio },
-          initial { _initial },
           debounceWaitTime { _debounceWaitTime },
-          // for now
           stableState { _initial },
           lastUnprocessedInterrupt { 0 } {
     }
@@ -79,7 +78,8 @@ class TransitionDebouncer {
     }
 };
 
-TransitionDebouncer<4> sw(RE_SW, LOW, 75);
+TransitionDebouncer<4> sw(RE_SW, LOW, 30);
+TransitionDebouncer<5> clk(RE_CLK, LOW, 1);
 
 
 
@@ -99,6 +99,12 @@ ISR(PCINT2_vect) {
         // treat it as fact
         if (!sw.lastUnprocessedInterrupt) {
             sw.lastUnprocessedInterrupt = now;
+        }
+    }
+
+    if (changed & (1 << 3)) {
+        if (!clk.lastUnprocessedInterrupt) {
+            clk.lastUnprocessedInterrupt = now;
         }
     }
 }
@@ -132,7 +138,7 @@ int main(void) {
     HAL::UART::init<9600>();
 
     RE_SW.setInputPullup();
-    // RE_CLK.setInputPullup();
+    RE_CLK.setInputPullup();
     RE_DATA::setInputPullup();
     LED0::setOutput();
     LED1::setOutput();
@@ -144,6 +150,7 @@ int main(void) {
 
 
     RE_SW.enablePCINT();
+    RE_CLK.enablePCINT();
     // RE_CLK.enablePCINT();
     
     // WD::reset();
@@ -162,6 +169,12 @@ int main(void) {
 
     while (1) {
 
+        // TODO 
+        // TODO 
+        // only big problems left are now:
+        //   - rising is laggy (too long weight)
+        //   - no <4> nonsense
+        //   - privatize lastUnprocessedInterrupt
         switch (sw.processAnyInterrupts()) {
             case Transition::RISING:
                 LED0::toggle();
@@ -171,6 +184,26 @@ int main(void) {
             default:
                 break;
         }
+
+        switch (clk.processAnyInterrupts()) {
+            case Transition::RISING:
+                break;
+            case Transition::FALLING:
+                numLEDs = (numLEDs + 1) % 4;
+                break;
+            default:
+                break;
+        }
+
+        LED1::setLow();
+        LED2::setLow();
+        LED3::setLow();
+        if (numLEDs > 2) 
+            LED3::setHigh();
+        if (numLEDs > 1)
+            LED2::setHigh();
+        if (numLEDs > 0)
+            LED1::setHigh();
 
 
         // doesn't work
