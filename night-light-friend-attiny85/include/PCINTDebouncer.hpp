@@ -1,4 +1,5 @@
-#include "avr-hal.hpp"
+
+#include <stdint.h>
 
 class PCINTDebouncer {
 

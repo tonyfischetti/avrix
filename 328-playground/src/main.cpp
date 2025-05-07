@@ -4,18 +4,22 @@
 #include <avr/interrupt.h>
 #include <util/delay.h>
 
+#include "PCINTDebouncer.hpp"
+
 #define _F_CPU 16000000UL
 #define BAUD 9600
 #define MYUBRR 103
 // (_F_CPU/16/BAUD-1)
 //
 
-volatile bool buttonPressedP  { false };
 volatile uint32_t lastPressed { 0     };
 volatile bool watchdogBarkedP { false };
+volatile uint8_t previousPIND { 0xFF  };
+
+volatile bool buttonPressedP  { false };
+volatile bool reChangedP { false };
 
 
-using RE_SW   = HAL::GPIO::GPIO<4>;
 using LED0    = HAL::GPIO::GPIO<15>;
 using LED1    = HAL::GPIO::GPIO<25>;
 using LED2    = HAL::GPIO::GPIO<24>;
@@ -23,11 +27,32 @@ using LED3    = HAL::GPIO::GPIO<23>;
 using MD1     = HAL::GPIO::GPIO<12>;
 using MD2     = HAL::GPIO::GPIO<13>;
 using MD3     = HAL::GPIO::GPIO<26>;
-using RE_CLK  = HAL::GPIO::GPIO<5>;
+// using RE_CLK  = HAL::GPIO::GPIO<5>;
 using RE_DATA = HAL::GPIO::GPIO<6>;
 using Button  = HAL::GPIO::GPIO<14>;
 
 // using WD   = HAL::Watchdog::Watchdog<19>;
+
+HAL::GPIO::GPIO<4> RE_SW;
+PCINTDebouncer RE_SW_D(true, 20);
+
+HAL::GPIO::GPIO<5> RE_CLK;
+PCINTDebouncer RE_CLK_D(true, 20);
+
+
+ISR(PCINT2_vect) {
+    uint32_t now = HAL::Ticker::getNumTicks();
+    uint8_t current = PINB;
+    uint8_t changed = current ^ previousPIND;
+    previousPIND = current;
+
+    if (changed & (1 << 2)) {
+        buttonPressedP = RE_SW_D.registerInterrupt(now, (current & (1 << 2)) > 0);
+    }
+    if (changed & (1 << 3)) {
+        reChangedP = RE_CLK_D.registerInterrupt(now, (current & (1 << 3)) > 0);
+    }
+}
 
 
 void uart_init(unsigned int ubrr) {
@@ -62,9 +87,6 @@ void uart_print(char* str) {
 }
 
 
-ISR(PCINT2_vect) {
-    buttonPressedP = true;
-}
 
 // ISR(WDT_vect) {
 //     watchdogBarkedP = true;
@@ -98,8 +120,8 @@ int main(void) {
 
     uart_print(alice);
 
-    RE_SW::setInputPullup();
-    RE_CLK::setInputPullup();
+    RE_SW.setInputPullup();
+    RE_CLK.setInputPullup();
     RE_DATA::setInputPullup();
     LED0::setOutput();
     LED1::setOutput();
@@ -111,7 +133,8 @@ int main(void) {
 
     uart_init(MYUBRR);
 
-    RE_SW::enablePCINT();
+    RE_SW.enablePCINT();
+    RE_CLK.enablePCINT();
     
     // WD::reset();
     
@@ -127,11 +150,14 @@ int main(void) {
 
         if (buttonPressedP) {
             buttonPressedP = false;
-            uint32_t now = HAL::Ticker::getNumTicks();
-            if ((now - lastPressed) > 250) {
-                lastPressed = now;
-                uart_print(yes);
+            if (!RE_SW_D.status()) {
                 LED0::toggle();
+            }
+        }
+        if (reChangedP) {
+            reChangedP = false;
+            if (!RE_CLK_D.status()) {
+                LED3::toggle();
             }
         }
 

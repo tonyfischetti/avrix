@@ -1,65 +1,38 @@
-#pragma once
 
 #include <stdint.h>
-#include <util/atomic.h>
-#include "../avr-hal/include/hal.hpp"
 
-
-template<typename Pin, uint32_t debounceDelayMS = 50>
 class PCINTDebouncer {
 
-    volatile bool interruptedP { false };
-    volatile bool rawState {};
-    bool stableState {};
-    uint32_t lastChangeTime {};
-
-    // void (*onFalling)() = nullptr;
-    // void (*onRising)() = nullptr;
+    bool stableState;
+    uint32_t lastChangeTime;
+    uint32_t lockOutPeriod;
 
   public:
-    PCINTDebouncer(Pin& pin, bool initialState)
-      : rawState { initialState },
-        stableState { initialState },
-        lastChangeTime { 0 } {
+
+    PCINTDebouncer(bool _initialState, uint32_t _lockOutPeriod)
+      : stableState    { _initialState },
+        lockOutPeriod  { _lockOutPeriod },
+        lastChangeTime { 0 }
+    {
     }
 
-    bool hasUpdate() {
-        bool wasInterrupted;
-
-        ATOMIC_BLOCK(ATOMIC_RESTORESTATE) {
-            wasInterrupted = interruptedP;
-            interruptedP = false;
-        }
-
-        if (!wasInterrupted) return false;
-
-        interruptedP = false;
-        uint32_t now = HAL::Ticker::getNumTicks();
-
-        if (rawState != stableState && ((now - lastChangeTime) >= debounceDelayMS)) {
-
-            // if (stableState && !rawState && onFalling) onFalling();
-            // if (!stableState && rawState && onRising) onRising();
-
+    bool registerInterrupt(uint8_t when, bool rawState) {
+        if ((uint32_t)(when - lastChangeTime) > lockOutPeriod) {
+            if (rawState == stableState)
+                return false;
             stableState = rawState;
-            lastChangeTime = now;
+            lastChangeTime = when;
             return true;
         }
-        // bouncing or no change
+        // ignore if still in lockout period
         return false;
     }
 
-    bool state() const {
+    bool status() {
         return stableState;
     }
 
-    // void setOnFalling(void (*callback)()) {
-    //     onFalling = callback;
-    // }
-    //
-    // void setOnRising(void (*callback)()) {
-    //     onRising = callback;
-    // }
+
 
 };
 
