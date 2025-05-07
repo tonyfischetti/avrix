@@ -32,8 +32,12 @@ using Button  = HAL::GPIO::GPIO<14>;
 
 HAL::GPIO::GPIO<4> RE_SW;
 
+
+enum class Signal : uint8_t { RISING, FALLING, NONE };
+
+
 template<uint8_t physicalPin>
-class DBouncer {
+class ActiveToggleDebouncer {
 
     // fix this <4> nonsense
     const HAL::GPIO::GPIO<physicalPin>& gpio;
@@ -45,34 +49,35 @@ class DBouncer {
   public:
     volatile uint32_t lastUnprocessedInterrupt;
 
-    DBouncer(HAL::GPIO::GPIO<physicalPin>& _gpio, bool _active, uint32_t _debounceWaitTime)
+    ActiveToggleDebouncer(HAL::GPIO::GPIO<physicalPin>& _gpio, bool _active, uint32_t _debounceWaitTime)
         : gpio { _gpio },
           active { _active },
           debounceWaitTime { _debounceWaitTime },
           // for now
-          stableState { true },
+          stableState { !_active },
           lastUnprocessedInterrupt { 0 } {
     }
 
-    bool processAnyInterrupts() {
-        bool stateChanged { false };
+    Signal processAnyInterrupts() {
+        Signal transistion { Signal::NONE };
         if (lastUnprocessedInterrupt > 0) {
             uint32_t now = HAL::Ticker::getNumTicks();
             if (((uint32_t)(now - lastUnprocessedInterrupt)) >= debounceWaitTime) {
                 bool nowState = gpio.read();
-                // assuming
-                if (nowState==active) {
-                    stableState = !stableState;
-                    stateChanged = true;
-                }
+
+                if (nowState && !stableState)
+                    transistion = Signal::RISING;
+                else if (!nowState && stableState)
+                    transistion = Signal::FALLING;
+
                 lastUnprocessedInterrupt = 0;
             }
         }
-        return stateChanged;
+        return transistion;
     }
 };
 
-DBouncer<4> sw(RE_SW, LOW, 75);
+ActiveToggleDebouncer<4> sw(RE_SW, LOW, 75);
 
 
 
@@ -155,8 +160,14 @@ int main(void) {
 
     while (1) {
 
-        if (sw.processAnyInterrupts()) {
-            LED0::toggle();
+        switch (sw.processAnyInterrupts()) {
+            case Signal::RISING:
+                LED0::toggle();
+                break;
+            case Signal::FALLING:
+                break;
+            default:
+                break;
         }
 
 
