@@ -55,25 +55,55 @@ static struct LatestRawEvent tmp = { 1, 0 };
 static struct FallingDebouncer SW_FD = { true, tmp, 0, 30, 0 };
 
 
+#define HIGH true
+#define LOW false
 
 struct DBouncer {
     const HAL::GPIO::GPIO<4>& gpio;
+    const bool active;
     // parameterize
     const uint32_t debounceWaitTime;
     volatile uint32_t lastUnprocessedInterrupt;
     // needs to be volatile?
     bool stableState;
 
-    DBouncer(HAL::GPIO::GPIO<4>& _gpio, uint32_t _debounceWaitTime)
+    DBouncer(HAL::GPIO::GPIO<4>& _gpio, bool _active, uint32_t _debounceWaitTime)
         : gpio { _gpio },
+          active { _active },
           debounceWaitTime { _debounceWaitTime },
           // for now
           stableState { true },
           lastUnprocessedInterrupt { 0 } {
     }
+
+    bool processAnyInterrupts() {
+        bool stateChanged { false };
+        if (lastUnprocessedInterrupt > 0) {
+            uint32_t now = HAL::Ticker::getNumTicks();
+            if (((uint32_t)(now - lastUnprocessedInterrupt)) >= debounceWaitTime) {
+                bool nowState = gpio.read();
+                // assuming
+                if (nowState==active) {
+                    stableState = !stableState;
+                    stateChanged = true;
+                }
+                lastUnprocessedInterrupt = 0;
+            }
+        }
+        return stateChanged;
+    }
 };
 
-DBouncer swnew(RE_SW, 75);
+/*
+                bool nowState = swnew.gpio.read();
+                if (!nowState) {
+                    swnew.stableState = !swnew.stableState;
+                }
+                swnew.lastUnprocessedInterrupt = 0;
+*/
+
+
+DBouncer swnew(RE_SW, LOW, 75);
 
 
 
@@ -167,25 +197,27 @@ int main(void) {
 
     while (1) {
 
-        // if (swnew.newState()) {
-
-        if (swnew.lastUnprocessedInterrupt > 0) {
-            uint32_t when = swnew.lastUnprocessedInterrupt;
-            uint32_t now = HAL::Ticker::getNumTicks();
-            if (((uint32_t)(now - when)) >= swnew.debounceWaitTime) {
-                bool nowState = swnew.gpio.read();
-                if (!nowState) {
-                    swnew.stableState = !swnew.stableState;
-                }
-                swnew.lastUnprocessedInterrupt = 0;
-            }
+        if (swnew.processAnyInterrupts()) {
+            LED0::toggle();
         }
 
+        // if (swnew.lastUnprocessedInterrupt > 0) {
+        //     uint32_t when = swnew.lastUnprocessedInterrupt;
+        //     uint32_t now = HAL::Ticker::getNumTicks();
+        //     if (((uint32_t)(now - when)) >= swnew.debounceWaitTime) {
+        //         bool nowState = swnew.gpio.read();
+        //         if (!nowState) {
+        //             swnew.stableState = !swnew.stableState;
+        //         }
+        //         swnew.lastUnprocessedInterrupt = 0;
+        //     }
+        // }
 
-        if (swnew.stableState)
-            LED0::setHigh();
-        else
-            LED0::setLow();
+
+        // if (swnew.stableState)
+        //     LED0::setHigh();
+        // else
+        //     LED0::setLow();
 
 
         // doesn't work
