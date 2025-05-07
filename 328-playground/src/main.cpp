@@ -5,12 +5,8 @@
 #include <util/delay.h>
 
 #include "PCINTDebouncer.hpp"
+#include "uart.hpp"
 
-#define _F_CPU 16000000UL
-#define BAUD 9600
-#define MYUBRR 103
-// (_F_CPU/16/BAUD-1)
-//
 
 volatile uint32_t lastPressed { 0     };
 volatile bool watchdogBarkedP { false };
@@ -18,6 +14,7 @@ volatile uint8_t previousPIND { 0xFF  };
 
 volatile bool buttonPressedP  { false };
 volatile bool reChangedP { false };
+
 
 
 using LED0    = HAL::GPIO::GPIO<15>;
@@ -34,57 +31,44 @@ using Button  = HAL::GPIO::GPIO<14>;
 // using WD   = HAL::Watchdog::Watchdog<19>;
 
 HAL::GPIO::GPIO<4> RE_SW;
-PCINTDebouncer RE_SW_D(true, 20);
+// PCINTDebouncer RE_SW_D(true, 20);
 
-HAL::GPIO::GPIO<5> RE_CLK;
-PCINTDebouncer RE_CLK_D(true, 20);
+// HAL::GPIO::GPIO<5> RE_CLK;
+// PCINTDebouncer RE_CLK_D(true, 20);
+
+
+struct LatestRawEvent {
+    volatile bool rawState;
+    volatile uint32_t when;
+};
+
+struct FallingDebouncer {
+    volatile bool stableState;
+    volatile struct LatestRawEvent latestRawEvent;
+    volatile uint32_t lastStateChange;
+    // parameterize type
+    volatile uint16_t timeOutPeriod;
+    volatile uint32_t wasInterrupted;
+};
+
+static struct LatestRawEvent tmp = { 1, 0 };
+static struct FallingDebouncer SW_FD = { true, tmp, 0, 30, 0 };
 
 
 ISR(PCINT2_vect) {
+    uint8_t current = PIND;
     uint32_t now = HAL::Ticker::getNumTicks();
-    uint8_t current = PINB;
     uint8_t changed = current ^ previousPIND;
     previousPIND = current;
 
     if (changed & (1 << 2)) {
-        buttonPressedP = RE_SW_D.registerInterrupt(now, (current & (1 << 2)) > 0);
-    }
-    if (changed & (1 << 3)) {
-        reChangedP = RE_CLK_D.registerInterrupt(now, (current & (1 << 3)) > 0);
-    }
-}
-
-
-void uart_init(unsigned int ubrr) {
-    // Set baud rate
-    UBRR0H = (unsigned char)(ubrr>>8);
-    UBRR0L = (unsigned char)ubrr;
-    
-    // Set frame format: 8 data bits, 1 stop bit, no parity
-    UCSR0C = (1<<UCSZ01) | (1<<UCSZ00);
-
-    // Enable transmitter
-    UCSR0B = (1<<RXEN0) | (1<<TXEN0);
-    
-}
-
-void uart_transmit(uint8_t data) {
-    // Wait for empty transmit buffer
-    while (!(UCSR0A & (1<<UDRE0))) {}
-    
-    // Put data into buffer, sends the data
-    UDR0 = data;
-}
-
-
-void uart_print(char* str) {
-    uint8_t i = 0;
-    // while (str[i]) {
-    while (str[i]) {
-        uart_transmit(str[i]);
-        i++;
+        if (SW_FD.wasInterrupted == 0) {
+            SW_FD.wasInterrupted = now;
+        }
     }
 }
+
+
 
 
 
@@ -118,10 +102,11 @@ void start_sequence() {
 
 int main(void) {
 
-    uart_print(alice);
+
+    HAL::UART::init<9600>();
 
     RE_SW.setInputPullup();
-    RE_CLK.setInputPullup();
+    // RE_CLK.setInputPullup();
     RE_DATA::setInputPullup();
     LED0::setOutput();
     LED1::setOutput();
@@ -131,35 +116,71 @@ int main(void) {
     MD2::setInput(); // pulled-down
     MD3::setInput(); // pulled-down
 
-    uart_init(MYUBRR);
 
     RE_SW.enablePCINT();
-    RE_CLK.enablePCINT();
+    // RE_CLK.enablePCINT();
     
     // WD::reset();
     
     HAL::Ticker::setupMSTimer();
 
+
     sei();
 
     start_sequence();
 
-    uart_print(es);
+    HAL::UART::print(alice);
+
 
     while (1) {
 
-        if (buttonPressedP) {
-            buttonPressedP = false;
-            if (!RE_SW_D.status()) {
-                LED0::toggle();
+        if (SW_FD.wasInterrupted > 0) {
+            uint32_t when = SW_FD.wasInterrupted;
+            uint32_t now = HAL::Ticker::getNumTicks();
+            if (((uint32_t)(now - when)) >= 50) {
+                bool nowState = RE_SW.read();
+                if (!nowState) {
+                    SW_FD.stableState = !SW_FD.stableState;
+                }
+                SW_FD.wasInterrupted = 0;
             }
         }
-        if (reChangedP) {
-            reChangedP = false;
-            if (!RE_CLK_D.status()) {
-                LED3::toggle();
-            }
-        }
+
+
+        if (SW_FD.stableState)
+            LED0::setHigh();
+        else
+            LED0::setLow();
+
+        // if (SW_FD.wasInterrupted) {
+        //     if (SW_FD.rawState != SW_FD.stableState) {
+        //         SW_FD.wasInterrupted = false;
+        //         uint32_t now = HAL::Ticker::getNumTicks();
+        //         if ((uint32_t)(now - SW_FD.lastStateChange) >= SW_FD.timeOutPeriod) {
+        //             // fd.numTimesFell = fd.numTimesFell+1;
+        //             SW_FD.lastStateChange = now;
+        //             SW_FD.stableState = SW_FD.rawState;
+        //             SW_FD.rawState = true;
+        //             // HAL::UART::println("debounced!");
+        //             if (SW_FD.stableState == 0)
+        //                 LED0::toggle();
+        //         }
+        //     }
+        // }
+
+        // if (buttonPressedP) {
+        //     buttonPressedP = false;
+        //     if (!RE_SW_D.status()) {
+        //         LED0::toggle();
+        //         HAL::UART::print(yes);
+        //     }
+        // }
+        // if (reChangedP) {
+        //     reChangedP = false;
+        //     if (!RE_CLK_D.status()) {
+        //         LED3::toggle();
+        //     }
+        // }
 
     }
     return 0;
