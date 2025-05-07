@@ -9,7 +9,7 @@
 #include <util/atomic.h>
 #include <util/delay.h>
 
-// #include "PCINTDebouncer.hpp"
+#include "util/TransitionDebouncer.hpp"
 
 
 
@@ -20,7 +20,8 @@ using LED3 = HAL::GPIO::GPIO<7>;
 using WD   = HAL::Watchdog::Watchdog<14>;
 
 HAL::GPIO::GPIO<3> SW;
-// PCINTDebouncer SW_D(true, 20);
+HAL::Utils::TransitionDebouncer<3> sw(SW, LOW, 30);
+
 
 volatile bool timeToFlickerP  { false };
 volatile uint8_t previousPINB { 0xFF  };
@@ -29,15 +30,6 @@ uint8_t mode                  { 0x00  };
 volatile bool pin3ChangedP { false };
 uint32_t lastChange { 0 };
 
-struct FallingDebouncer {
-    volatile uint32_t lastStateChange;
-    // parameterize type
-    volatile uint8_t numTimesFell;
-    volatile uint8_t timeOutPeriod;
-};
-
-static struct FallingDebouncer SW_FD = { 0, 0, 120 };
-static struct FallingDebouncer SW_CLK = { 0, 0, 1 };
 
 
 void changeMode(bool forward = true) {
@@ -64,20 +56,6 @@ void changeMode(bool forward = true) {
     }
 }
 
-void fdInterrupted(struct FallingDebouncer& fd, uint32_t when, bool rawState) {
-    if (rawState)
-        return;
-    if ((uint32_t)(when - fd.lastStateChange) >= fd.timeOutPeriod) {
-        // fd.numTimesFell = fd.numTimesFell+1;
-        // fd.lastStateChange = when;
-        changeMode();
-    }
-}
-
-
-
-
-
 
 ISR(WDT_vect) {
     timeToFlickerP = true;
@@ -90,8 +68,9 @@ ISR(PCINT0_vect) {
     previousPINB = current;
 
     if (changed & (1 << 4)) {
-        fdInterrupted(SW_FD, now, (current & (1 << 4)) > 0);
-        // pin3ChangedP = SW_D.registerInterrupt(now, (current & (1 << 4)) > 0);
+        if (!sw.lastUnprocessedInterrupt) {
+            sw.lastUnprocessedInterrupt = now;
+        }
     }
 }
 
@@ -141,23 +120,21 @@ int main() {
 
     while (1) {
 
+
+        switch (sw.processAnyInterrupts()) {
+            case HAL::Transition::RISING:
+                break;
+            case HAL::Transition::FALLING:
+                changeMode();
+                break;
+            default:
+                break;
+        }
+
         if (!mode) {
             if (timeToFlickerP) flicker();
             WD::reset();
         }
-
-        // if (pin3ChangedP) {
-        //     pin3ChangedP = false;
-        //     if (!SW_D.status()) {
-        //         moveModeForward();
-        //     }
-        // }
-
-        // if (SW_FD.numTimesFell > 0) {
-        //     changeMode();
-        //     SW_FD.numTimesFell--;
-        // }
-
 
         HAL::Sleep::goToSleep(SLEEP_MODE_IDLE);
 
