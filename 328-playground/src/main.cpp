@@ -69,10 +69,11 @@ ISR(PCINT2_vect) {
 ISR(PCINT0_vect) {
     uint8_t current = PINB;
     uint32_t now = HAL::Ticker::getNumTicks();
-    uint8_t changed = current ^ previousPIND;
+    uint8_t changed = current ^ previousPINB;
     previousPINB = current;
 
     if (changed & 0x01) {
+        // HAL::UART::printByte('!');
         if (!btn.lastUnprocessedInterrupt) {
             btn.lastUnprocessedInterrupt = now;
         }
