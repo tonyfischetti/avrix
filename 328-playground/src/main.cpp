@@ -12,6 +12,7 @@
 volatile uint32_t lastPressed { 0     };
 volatile bool watchdogBarkedP { false };
 volatile uint8_t previousPIND { 0xFF  };
+volatile uint8_t previousPINB { 0xFF  };
 
 volatile bool buttonPressedP  { false };
 volatile bool reChangedP { false };
@@ -20,25 +21,26 @@ volatile bool reChangedP { false };
 uint8_t numLEDs { 0 };
 
 
-using LED0    = HAL::GPIO::GPIO<15>;
-using LED1    = HAL::GPIO::GPIO<25>;
-using LED2    = HAL::GPIO::GPIO<24>;
-using LED3    = HAL::GPIO::GPIO<23>;
-using MD1     = HAL::GPIO::GPIO<12>;
-using MD2     = HAL::GPIO::GPIO<13>;
-using MD3     = HAL::GPIO::GPIO<26>;
-// using RE_CLK  = HAL::GPIO::GPIO<5>;
-using RE_DATA = HAL::GPIO::GPIO<6>;
-using Button  = HAL::GPIO::GPIO<14>;
+using LED0 = HAL::GPIO::GPIO<15>;
+using LED1 = HAL::GPIO::GPIO<25>;
+using LED2 = HAL::GPIO::GPIO<24>;
+using LED3 = HAL::GPIO::GPIO<23>;
+using MD1  = HAL::GPIO::GPIO<12>;
+using MD2  = HAL::GPIO::GPIO<13>;
+using MD3  = HAL::GPIO::GPIO<26>;
+using GATE = HAL::GPIO::GPIO<11>;
 
 // using WD   = HAL::Watchdog::Watchdog<19>;
 
-HAL::GPIO::GPIO<4> RE_SW;
-HAL::GPIO::GPIO<5> RE_CLK;
+HAL::GPIO::GPIO<4>  RE_SW;
+HAL::GPIO::GPIO<5>  RE_CLK;
+HAL::GPIO::GPIO<6>  RE_DT;
+HAL::GPIO::GPIO<14> RAW_BTN;
 
 
-HAL::Utils::TransitionDebouncer<4> sw(RE_SW, LOW, 30);
-HAL::Utils::TransitionDebouncer<5> clk(RE_CLK, LOW, 1);
+HAL::Utils::TransitionDebouncer<4> sw(RE_SW, HIGH, 30);
+HAL::Utils::TransitionDebouncer<5> clk(RE_CLK, HIGH, 1);
+HAL::Utils::TransitionDebouncer<14> btn(RAW_BTN, HIGH, 3);
 
 
 
@@ -48,14 +50,7 @@ ISR(PCINT2_vect) {
     uint8_t changed = current ^ previousPIND;
     previousPIND = current;
 
-    // the pin changed in some way since last interrupt
     if (changed & (1 << 2)) {
-        // if there were a previous interrupt and it was not handled outside
-        // the ISR, we don't want to update the interrupt time
-        //
-        // the idea is to wait _x_ amount of milliseconds _after_ the
-        // first PCINT (bounce 0) and then take the level then and
-        // treat it as fact
         if (!sw.lastUnprocessedInterrupt) {
             sw.lastUnprocessedInterrupt = now;
         }
@@ -66,9 +61,23 @@ ISR(PCINT2_vect) {
             clk.lastUnprocessedInterrupt = now;
         }
     }
+
+    
 }
 
 
+ISR(PCINT0_vect) {
+    uint8_t current = PINB;
+    uint32_t now = HAL::Ticker::getNumTicks();
+    uint8_t changed = current ^ previousPIND;
+    previousPINB = current;
+
+    if (changed & 0x01) {
+        if (!btn.lastUnprocessedInterrupt) {
+            btn.lastUnprocessedInterrupt = now;
+        }
+    }
+}
 
 
 
@@ -98,7 +107,8 @@ int main(void) {
 
     RE_SW.setInputPullup();
     RE_CLK.setInputPullup();
-    RE_DATA::setInputPullup();
+    RE_DT.setInputPullup();
+    RAW_BTN.setInputPullup();
     LED0::setOutput();
     LED1::setOutput();
     LED2::setOutput();
@@ -110,7 +120,7 @@ int main(void) {
 
     RE_SW.enablePCINT();
     RE_CLK.enablePCINT();
-    // RE_CLK.enablePCINT();
+    RAW_BTN.enablePCINT();
     
     // WD::reset();
     
@@ -124,8 +134,6 @@ int main(void) {
     HAL::UART::print(alice);
 
 
-
-
     while (1) {
 
         // TODO 
@@ -136,9 +144,10 @@ int main(void) {
         //   - privatize lastUnprocessedInterrupt
         switch (sw.processAnyInterrupts()) {
             case HAL::Transition::RISING:
-                LED0::toggle();
+                // LED0::toggle();
                 break;
             case HAL::Transition::FALLING:
+                LED0::toggle();
                 break;
             default:
                 break;
@@ -149,6 +158,16 @@ int main(void) {
                 break;
             case HAL::Transition::FALLING:
                 numLEDs = (numLEDs + 1) % 4;
+                break;
+            default:
+                break;
+        }
+
+        switch (btn.processAnyInterrupts()) {
+            case HAL::Transition::RISING:
+                break;
+            case HAL::Transition::FALLING:
+                GATE::toggle();
                 break;
             default:
                 break;

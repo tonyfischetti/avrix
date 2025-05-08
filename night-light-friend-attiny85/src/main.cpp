@@ -20,7 +20,7 @@ using LED3 = HAL::GPIO::GPIO<7>;
 using WD   = HAL::Watchdog::Watchdog<14>;
 
 HAL::GPIO::GPIO<3> SW;
-HAL::Utils::TransitionDebouncer<3> sw(SW, LOW, 30);
+HAL::Utils::TransitionDebouncer<3> sw(SW, HIGH, 30);
 
 
 volatile bool timeToFlickerP  { false };
