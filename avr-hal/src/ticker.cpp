@@ -33,7 +33,7 @@ constexpr bool isExactOCR0A(uint32_t f_cpu, uint16_t prescaler) {
 }
 
 constexpr int findValidPrescalerIndex() {
-    for (int i = 0; i < sizeof(prescaler_options) / sizeof(prescaler_options[0]); ++i) {
+    for (uint8_t i = 0; i < sizeof(prescaler_options) / sizeof(prescaler_options[0]); ++i) {
         if (isExactOCR0A(F_CPU, prescaler_options[i].prescaler)) {
             uint32_t ocr = F_CPU / (prescaler_options[i].prescaler * 1000UL);
             if (ocr > 0 && ocr <= 256)

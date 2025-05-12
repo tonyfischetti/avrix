@@ -17,7 +17,6 @@ namespace Utils {
 template<uint8_t physicalPin>
 class TransitionDebouncer {
 
-    // fix this <4> nonsense
     const HAL::GPIO::GPIO<physicalPin>& gpio;
     // parameterize
     const uint32_t debounceWaitTime;
@@ -37,7 +36,7 @@ class TransitionDebouncer {
         Transition transition { Transition::NONE };
         if (lastUnprocessedInterrupt > 0) {
             uint32_t now = HAL::Ticker::getNumTicks();
-            if (((uint32_t)(now - lastUnprocessedInterrupt)) >= debounceWaitTime) {
+            if ((static_cast<uint32_t>((now - lastUnprocessedInterrupt))) >= debounceWaitTime) {
                 bool nowState = gpio.read();
 
                 if (nowState && !stableState)

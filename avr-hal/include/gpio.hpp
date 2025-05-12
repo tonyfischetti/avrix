@@ -36,10 +36,9 @@ struct GPIO {
     static inline void toggle()    { PORTB ^=  mask; }
     static inline void setOutput() { DDRB  |=  mask; }
     static inline void setInput()  { DDRB  &= ~mask; }
+    static inline bool read()      { return PINB & mask; }
 
-    static inline bool read() {
-        return PINB & mask;
-    }
+    static inline void setInputPullup() { setInput(); setHigh(); }
 
     static inline void enablePCINT() {
         GIMSK |= (1 << PCIE);

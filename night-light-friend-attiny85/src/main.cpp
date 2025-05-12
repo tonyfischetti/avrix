@@ -108,8 +108,7 @@ int main() {
     LED3::setOutput();
     GATE::setOutput();
 
-    SW.setInput();
-    SW.setPullup();
+    SW.setInputPullup();
     SW.enablePCINT();
 
     start_sequence();
@@ -126,6 +125,8 @@ int main() {
                 break;
             case HAL::Transition::FALLING:
                 changeMode();
+                break;
+            case HAL::Transition::NONE:
                 break;
             default:
                 break;
