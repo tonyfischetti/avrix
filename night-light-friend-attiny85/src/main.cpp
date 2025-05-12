@@ -1,7 +1,6 @@
 #include "avr-hal.hpp"
 
 #include <stdint.h>
-#include <stdlib.h>
 
 #include <avr/io.h>
 #include <avr/power.h>
@@ -10,6 +9,7 @@
 #include <util/delay.h>
 
 #include "util/TransitionDebouncer.hpp"
+#include "util/LFSR.hpp"
 
 
 
@@ -21,6 +21,9 @@ using WD   = HAL::Watchdog::Watchdog<14>;
 
 HAL::GPIO::GPIO<3> SW;
 HAL::Utils::TransitionDebouncer<3> sw(SW, HIGH, 30);
+
+//  TODO  set seed from source of entropy (?)
+HAL::Utils::Random::LFSR lfsr(93);
 
 
 volatile bool timeToFlickerP  { false };
@@ -79,7 +82,7 @@ void flicker() {
     static uint8_t currentRand { 0 };
     timeToFlickerP = false;
 
-    currentRand = static_cast<uint8_t>(rand());
+    currentRand = static_cast<uint8_t>(lfsr.nextByte());
 
     if ((currentRand & (0x03) << 0)) LED1::setHigh();
     else                             LED1::setLow();
