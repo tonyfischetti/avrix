@@ -11,53 +11,28 @@
 namespace HAL {
 namespace GPIO {
 
-#if defined(__AVR_ATtiny85__)
-
-static constexpr uint8_t getPinMask(uint8_t pnum) {
-    if      (pnum == 5) return (1 << 0); // PB0
-    else if (pnum == 6) return (1 << 1); // PB1
-    else if (pnum == 7) return (1 << 2); // PB2
-    else if (pnum == 2) return (1 << 3); // PB3
-    else if (pnum == 3) return (1 << 4); // PB4
-    else                return (1 << 0); // ???
-}
-
-
-template<uint8_t physicalPin>
-struct GPIO {
-    static_assert(physicalPin < 8 || physicalPin > 1,
-            "Invalid pin number for ATTiny85");
-
-    static constexpr uint8_t mask { getPinMask(physicalPin) };
-
-    static inline void setHigh()   { PORTB |=  mask; }
-    static inline void setPullup() { PORTB |=  mask; }
-    static inline void setLow()    { PORTB &= ~mask; }
-    static inline void toggle()    { PORTB ^=  mask; }
-    static inline void setOutput() { DDRB  |=  mask; }
-    static inline void setInput()  { DDRB  &= ~mask; }
-    static inline bool read()      { return PINB & mask; }
-
-    static inline void setInputPullup() { setInput(); setHigh(); }
-
-    static inline void enablePCINT() {
-        GIMSK |= (1 << PCIE);
-        PCMSK |= mask;
-    }
-};
-
-#elif defined(__AVR_ATmega328P__)
-
 enum class Port : uint8_t { B, C, D, Invalid };
 
 struct PinInfo {
     Port port;
     uint8_t bit;
-    uint8_t pcint_number;
-    uint8_t pcicr_bit;
+    uint8_t pcintNumber;
+    uint8_t pcicrBit;
 };
 
-constexpr PinInfo pin_table[28] = {
+#if defined(__AVR_ATtiny85__)
+constexpr PinInfo pinTable[8] = {
+    { Port::B, 5, 5, PCIE },          //  1 RESET (PB5)
+    { Port::B, 3, 3, PCIE },          //  2 PB3
+    { Port::B, 4, 4, PCIE },          //  3 PB4
+    { Port::Invalid, 0, 0xFF, 0xFF }, //  4 GND
+    { Port::B, 0, 0, PCIE },          //  5 PB0
+    { Port::B, 1, 1, PCIE },          //  6 PB1
+    { Port::B, 2, 2, PCIE },          //  6 PB2
+    { Port::Invalid, 0, 0xFF, 0xFF }, //  8 VCC
+};
+#elif defined(__AVR_ATmega328P__)
+constexpr PinInfo pinTable[28] = {
     { Port::Invalid, 0, 0xFF, 0xFF }, //  1 RESET
     { Port::D, 0, 16, PCIE2 },        //  2 PD0
     { Port::D, 1, 17, PCIE2 },        //  3 PD1
@@ -87,8 +62,8 @@ constexpr PinInfo pin_table[28] = {
     { Port::C, 4, 12, PCIE1 },        // 27 PC4
     { Port::C, 5, 13, PCIE1 },        // 28 PC5
 };
+#endif
 
-// resolved at runtime :(
 struct PinRegisters {
     volatile uint8_t* ddr;
     volatile uint8_t* port;
@@ -96,6 +71,7 @@ struct PinRegisters {
     volatile uint8_t* pcmsk;
 };
 
+#if defined(__AVR_ATmega328P__)
 inline PinRegisters resolveRegisters(Port port) {
     switch (port) {
         case Port::B: return { &DDRB, &PORTB, &PINB, &PCMSK0 };
@@ -104,15 +80,27 @@ inline PinRegisters resolveRegisters(Port port) {
         default:      return { nullptr, nullptr, nullptr, nullptr };
     }
 }
+#endif
 
 template<uint8_t physicalPin>
 struct GPIO {
+
+#if defined(__AVR_ATtiny85__)
+    static_assert(physicalPin < 8 || physicalPin > 1,
+            "Invalid pin number for ATTiny85");
+#elif defined(__AVR_ATmega328P__)
     static_assert(physicalPin < 29 || physicalPin > 0,
             "Invalid pin number for ATMega328P");
+#endif
 
-    static constexpr PinInfo info = pin_table[physicalPin-1];
+    static constexpr PinInfo info = pinTable[physicalPin-1];
 
+#if defined(__AVR_ATtiny85__)
+    static inline PinRegisters regs = { &DDRB, &PORTB, &PINB, &PCMSK };
+#elif defined(__AVR_ATmega328P__)
+    // resolved at runtime :(
     static inline PinRegisters regs = resolveRegisters(info.port);
+#endif
     static inline uint8_t mask = (1 << info.bit);
 
     static inline void setOutput() { *(regs.ddr)  |=  mask; }
@@ -125,12 +113,15 @@ struct GPIO {
     static inline void setInputPullup() { setInput(); setHigh(); }
 
     static inline void enablePCINT() {
-        PCICR |= (1 << info.pcicr_bit);
+#if defined(__AVR_ATtiny85__)
+        GIMSK |= (1 << info.pcicrBit);
+#elif defined(__AVR_ATmega328P__)
+        PCICR |= (1 << info.pcicrBit);
+#endif
         *(regs.pcmsk) |= mask;
     }
 };
 
-#endif
 
 }
 }
