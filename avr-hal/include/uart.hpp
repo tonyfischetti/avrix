@@ -6,14 +6,12 @@
 #include <avr/sleep.h>
 #include <avr/interrupt.h>
 
-#warning "uart.hpp included"
 
 namespace HAL {
 namespace UART {
 
 #if defined(__AVR_ATtiny85__)
 #warning "HAL::UART is not supported on ATtiny85"
-
 #else
 
 template<uint32_t BaudRate>
@@ -23,13 +21,14 @@ inline void init() {
     constexpr uint16_t ubrr = (F_CPU / (16UL * BaudRate)) - 1;
 
     // Set baud rate
-    UBRR0H = (unsigned char)(ubrr>>8);
-    UBRR0L = (unsigned char)ubrr;
+    UBRR0H = (uint8_t)(ubrr>>8);
+    UBRR0L = (uint8_t)ubrr;
     
     // Set frame format: 8 data bits, 1 stop bit, no parity
     UCSR0C = (1<<UCSZ01) | (1<<UCSZ00);
 
     // Enable transmitter
+    //  TODO  parameterize
     UCSR0B = (1<<RXEN0) | (1<<TXEN0);
 }
 
@@ -42,10 +41,8 @@ inline void printByte(uint8_t data) {
 }
 
 inline void print(const char* str) {
-    uint32_t i = 0;
-    while (str[i]) {
-        printByte(str[i]);
-        i++;
+    while (*str) {
+        printByte(*str++);
     }
 }
 

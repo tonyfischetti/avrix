@@ -18,7 +18,7 @@ template<uint8_t physicalPin>
 class TransitionDebouncer {
 
     const HAL::GPIO::GPIO<physicalPin>& gpio;
-    // parameterize
+    //  TODO  parameterize
     const uint32_t debounceWaitTime;
     bool stableState;
 
