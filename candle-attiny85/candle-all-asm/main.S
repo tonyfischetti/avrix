@@ -6,7 +6,8 @@
 ; Constants
 ; ============================
 
-.set LED1, 3       ; PB3
+; .set LED1, 3       ; PB3
+.set LED1, 0       ; PB0
 .set LED2, 1       ; PB1
 .set LED3, 2       ; PB2
 
@@ -79,6 +80,7 @@ reset:
     out WDTCR, r16
 
     ; WDTCR = (1 << WDIE) | (1 << WDP1) | (1 << WDP0); // 125 ms
+    ; ldi r16, (1 << WDIE) | (1 << WDP2) | (1 << WDP0) ; for debugging
     ldi r16, (1 << WDIE) | (1 << WDP1) | (1 << WDP0)
     out WDTCR, r16
     sei
@@ -99,6 +101,8 @@ main_loop:
     ldi r16, 0
     sts wd_barked, r16
 
+    clr r20 ; counter to make sure at least one led is lit
+
     rcall get_next_byte
     mov r16, r24  ; r16 hold new random byte
     in r17, PORTB
@@ -110,6 +114,7 @@ main_loop:
     andi r18, 0x03
     tst r18
     breq skip_led1
+    inc r20
     ori r17, (1 << LED1)
 skip_led1:
     ; --- LED2: if (r & (0x03 << 2))
@@ -117,6 +122,7 @@ skip_led1:
     andi r18, 0x0C
     tst r18
     breq skip_led2
+    inc r20
     ori r17, (1 << LED2)
 skip_led2:
     ; --- LED3: if ((r & 0x30) || !(r & 0x0F))
@@ -124,11 +130,8 @@ skip_led2:
     andi r18, 0x30
     tst r18
     brne set_led3
-    mov r18, r16
-    andi r18, 0x0F
-    tst r18
-    breq set_led3
-    rjmp skip_led3
+    tst r20
+    brne skip_led3
 set_led3:
     ori r17, (1 << LED3)
 skip_led3:
