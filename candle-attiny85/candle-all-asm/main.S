@@ -18,6 +18,9 @@
 .global lfsr_state
 lfsr_state:
     .skip 1         ; Reserve 1 byte for state
+.global wd_barked
+wd_barked:
+    .skip 1
 
 
 ; ============================
@@ -80,20 +83,22 @@ reset:
     out WDTCR, r16
     sei
 
+
 main_loop:
     ldi r16, (1 << SE) | (1 << SM1)  ; Power-down sleep mode
     out MCUCR, r16
     sleep
-    rjmp main_loop
 
+    lds r16, wd_barked
+    tst r16
+    breq main_loop
 
+    ;--------------------;
+    ;  Watchdog barked!  ;
+    ;--------------------;
+    ldi r16, 0
+    sts wd_barked, r16
 
-; ============================
-; Watchdog Interrupt Handler
-; ============================
-
-.type wd_handler, @function
-wd_handler:
     rcall get_next_byte
     mov r16, r24  ; r16 hold new random byte
     in r17, PORTB
@@ -128,7 +133,21 @@ set_led3:
     ori r17, (1 << LED3)
 skip_led3:
     out PORTB, r17
+
+    rjmp main_loop
+
+
+
+; ============================
+; Watchdog Interrupt Handler
+; ============================
+
+.type wd_handler, @function
+wd_handler:
+    ldi r16, 1
+    sts wd_barked, r16
     reti
+
 
 
 ; ============================
