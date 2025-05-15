@@ -1,6 +1,7 @@
 #define __SFR_OFFSET 0x00
 #include <avr/io.h>
 
+
 ; ============================
 ; Constants
 ; ============================
@@ -8,6 +9,7 @@
 .set LED1, 3       ; PB3
 .set LED2, 1       ; PB1
 .set LED3, 2       ; PB2
+
 
 ; ============================
 ; LFSR State Storage
@@ -17,9 +19,11 @@
 lfsr_state:
     .skip 1         ; Reserve 1 byte for state
 
+
 ; ============================
 ; Interrupt Vector Table
 ; ============================
+
 .section .vectors
 .org 0x0000
     rjmp reset               ; RESET
@@ -38,6 +42,7 @@ lfsr_state:
     rjmp default_handler     ; USI_START_vect
     rjmp default_handler     ; USI_OVF_vect
 
+
 ; ============================
 ; Main Program
 ; ============================
@@ -50,28 +55,28 @@ reset:
     ldi r16, 0xFF   ; RAMEND = 0xFF (512 - 1)
     out SPL, r16
 
-    ; Set PB1–PB3 as output (LEDs)
+    ; set outputs
     sbi DDRB, LED1
     sbi DDRB, LED2
     sbi DDRB, LED3
 
-    ; Seed LFSR with a non-zero value
+    ; Seed LFSR with a lucky number
     ldi r16, 93
     sts lfsr_state, r16
 
     ; --- Watchdog Setup ---
     cli
+    // MCUSR &= static_cast<uint8_t>(~(1 << WDRF));
     in r16, MCUSR
     andi r16, 0xF7           ; Clear WDRF
     out MCUSR, r16
 
-    ; Enable timed sequence
+    ; WDTCR |= (1 << WDCE) | (1 << WDE);
     ldi r16, (1 << WDCE) | (1 << WDE)
     out WDTCR, r16
 
-    ; Set interrupt mode only, prescaler ~0.25s (WDP1 | WDP0)
+    ; WDTCR = (1 << WDIE) | (1 << WDP1) | (1 << WDP0); // 125 ms
     ldi r16, (1 << WDIE) | (1 << WDP1) | (1 << WDP0)
-    ; ldi r16, (1 << WDIE) | (1 << WDP3)
     out WDTCR, r16
     sei
 
@@ -86,14 +91,14 @@ main_loop:
 ; ============================
 ; Watchdog Interrupt Handler
 ; ============================
+
 .type wd_handler, @function
 wd_handler:
     rcall get_next_byte
-    mov r16, r24        ; r16 = random byte
-
+    mov r16, r24  ; r16 hold new random byte
     in r17, PORTB
-    ; clear LED1–3 bits
-    andi r17, ~( (1 << LED1) | (1 << LED2) | (1 << LED3) )
+    ; clear LED bits
+    andi r17, ~((1 << LED1) | (1 << LED2) | (1 << LED3))
 
     ; --- LED1: if (r & 0x03)
     mov r18, r16
@@ -102,7 +107,6 @@ wd_handler:
     breq skip_led1
     ori r17, (1 << LED1)
 skip_led1:
-
     ; --- LED2: if (r & (0x03 << 2))
     mov r18, r16
     andi r18, 0x0C
@@ -110,28 +114,21 @@ skip_led1:
     breq skip_led2
     ori r17, (1 << LED2)
 skip_led2:
-
     ; --- LED3: if ((r & 0x30) || !(r & 0x0F))
     mov r18, r16
     andi r18, 0x30
     tst r18
     brne set_led3
-
     mov r18, r16
     andi r18, 0x0F
     tst r18
     breq set_led3
     rjmp skip_led3
-
 set_led3:
     ori r17, (1 << LED3)
 skip_led3:
-
     out PORTB, r17
     reti
-
-
-
 
 
 ; ============================
@@ -140,12 +137,16 @@ skip_led3:
 default_handler:
     reti
 
+
 ; ============================
-; LFSR: 8-bit, X^8 + X^6 + X^5 + X^4 + 1
+; LFSR
+;   8-bit
+;   maximally long period
+;   00011101 <- taps
 ; ============================
 
 get_next_byte:
-    clr r17                 ; result byte
+    clr r17
     rcall get_next_bit
     rcall get_next_bit
     rcall get_next_bit
@@ -162,22 +163,20 @@ get_next_bit:
     clr r19
     lds r16, lfsr_state
     mov r18, r16
-
-    ; XOR taps: 0, 2, 3, 4
-    eor r19, r16
+    eor r19, r16 ; (r16 >> 0)
     lsr r16
     lsr r16
-    eor r19, r16
+    eor r19, r16 ; (r16 >> 2)
     lsr r16
-    eor r19, r16
+    eor r19, r16 ; (r16 >> 3)
     lsr r16
-    eor r19, r16
+    eor r19, r16 ; (r16 >> 4)
     lsr r16
     lsr r16
     lsr r16
-
-    lsr r19
-    ror r18
+    lsr r19      ; carry flag is the fresh bit!
+    ror r18      ; carry flag is the random bit and r18 is new state
     rol r17
     sts lfsr_state, r18
     ret
+
