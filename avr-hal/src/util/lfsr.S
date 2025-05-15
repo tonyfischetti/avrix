@@ -4,17 +4,8 @@ lfsr_state:
     .skip 1             ; Reserve 1 byte for LFSR state (uninitialized data)
 
 .section .text
-.global start
 .global init_lfsr
 .global get_next_byte
-
-.type start, @function
-start:
-    ; sbi 0x17, 0        ; Set PB0 as output (DDRB)
-    sbi 0x17, 3        ; Set PB3 as output (DDRB)
-    sbi 0x17, 1        ; Set PB1 as output
-    sbi 0x17, 2        ; Set PB2 as output
-    ret
 
 .type init_lfsr, @function
 init_lfsr:

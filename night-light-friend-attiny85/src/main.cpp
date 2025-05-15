@@ -19,11 +19,10 @@ using LED2 = HAL::GPIO::GPIO<6>;
 using LED3 = HAL::GPIO::GPIO<7>;
 using WD   = HAL::Watchdog::Watchdog<14>;
 
+using lfsr = HAL::Utils::Random::LFSR;
+
 HAL::GPIO::GPIO<3> SW;
 HAL::Utils::TransitionDebouncer<3> sw(SW, HIGH, 30);
-
-//  TODO  set seed from source of entropy (?)
-HAL::Utils::Random::LFSR lfsr(93);
 
 
 volatile bool timeToFlickerP  { false };
@@ -82,7 +81,7 @@ void flicker() {
     static uint8_t currentRand { 0 };
     timeToFlickerP = false;
 
-    currentRand = static_cast<uint8_t>(lfsr.nextByte());
+    currentRand = static_cast<uint8_t>(lfsr::nextByte());
 
     if ((currentRand & (0x03) << 0)) LED1::setHigh();
     else                             LED1::setLow();
@@ -115,6 +114,8 @@ int main() {
     SW.enablePCINT();
 
     start_sequence();
+
+    lfsr::init(93);
 
     HAL::Ticker::setupMSTimer();
     WD::reset();
