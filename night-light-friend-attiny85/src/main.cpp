@@ -21,8 +21,7 @@ using WD   = HAL::Watchdog::Watchdog<14>;
 
 using lfsr = HAL::Utils::Random::LFSR;
 
-HAL::GPIO::GPIO<3> SW;
-HAL::Utils::TransitionDebouncer<3> sw(SW, HIGH, 30);
+HAL::Utils::TransitionDebouncer<3> sw(HIGH, 30, true);
 
 
 volatile bool timeToFlickerP  { false };
@@ -70,9 +69,7 @@ ISR(PCINT0_vect) {
     previousPINB = current;
 
     if (changed & (1 << 4)) {
-        if (!sw.lastUnprocessedInterrupt) {
-            sw.lastUnprocessedInterrupt = now;
-        }
+        sw.notifyInterruptOccurred(now, current);
     }
 }
 
@@ -109,9 +106,6 @@ int main() {
     LED2::setOutput();
     LED3::setOutput();
     GATE::setOutput();
-
-    SW.setInputPullup();
-    SW.enablePCINT();
 
     start_sequence();
 
