@@ -68,9 +68,7 @@ ISR(PCINT0_vect) {
     uint8_t changed = current ^ previousPINB;
     previousPINB = current;
 
-    if (changed & (1 << 4)) {
-        sw.notifyInterruptOccurred(now, current);
-    }
+    sw.notifyInterruptOccurred(now, changed);
 }
 
 

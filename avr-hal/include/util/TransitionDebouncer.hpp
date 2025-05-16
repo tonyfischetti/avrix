@@ -25,7 +25,9 @@ class TransitionDebouncer {
   public:
     volatile uint32_t lastUnprocessedInterrupt;
 
-    TransitionDebouncer(bool _initial, uint32_t _debounceWaitTime, bool _pullup=false)
+    TransitionDebouncer(bool _initial,
+                        uint32_t _debounceWaitTime,
+                        bool _pullup=false)
         : debounceWaitTime { _debounceWaitTime },
           stableState { _initial },
           lastUnprocessedInterrupt { 0 } {
@@ -36,9 +38,11 @@ class TransitionDebouncer {
         HAL::GPIO::GPIO<physicalPin>::enablePCINT();
     }
 
-    void notifyInterruptOccurred(uint32_t now) {
-        if (!lastUnprocessedInterrupt) {
-            lastUnprocessedInterrupt = now;
+    void notifyInterruptOccurred(uint32_t now, uint8_t changed) {
+        if (changed & gpio.mask) {
+            if (!lastUnprocessedInterrupt) {
+                lastUnprocessedInterrupt = now;
+            }
         }
     }
 
