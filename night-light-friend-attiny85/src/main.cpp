@@ -21,7 +21,7 @@ using WD   = HAL::Watchdog::Watchdog<14>;
 
 using lfsr = HAL::Utils::Random::LFSR;
 
-HAL::Utils::IntTransitionDebouncer<3> sw(HIGH, 30, true);
+HAL::Utils::IntTransitionDebouncer<3, 30, HIGH, true> sw;
 
 
 volatile bool timeToFlickerP  { false };

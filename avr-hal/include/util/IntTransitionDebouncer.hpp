@@ -76,43 +76,34 @@ enum class Transition : uint8_t { RISING, FALLING, NONE };
 
 namespace Utils {
 
-template<uint8_t physicalPin>
+template<uint8_t physicalPin,
+         uint32_t debounceWaitTime,
+         bool initial,
+         bool usePullupP>
 class IntTransitionDebouncer {
 
     HAL::GPIO::GPIO<physicalPin> gpio;
     //  TODO  parameterize
-    const uint32_t debounceWaitTime;
     bool stableState;
-    bool initializedP;
-    bool pullupP;
 
   public:
     volatile uint32_t lastUnprocessedPrimeInterrupt;
 
-    IntTransitionDebouncer(bool _initial,
-                           uint32_t _debounceWaitTime,
-                           bool _pullup=false)
-        : debounceWaitTime { _debounceWaitTime },
-          stableState { _initial },
-          lastUnprocessedPrimeInterrupt { 0 },
-          initializedP { false },
-          pullupP { _pullup } {
+    IntTransitionDebouncer() 
+        : lastUnprocessedPrimeInterrupt { 0 },
+          stableState { initial } {
     }
 
     void begin() {
-        if (!initializedP) {
-            if (pullupP)
-                gpio.setInputPullup();
-            else
-                gpio.setInput();
-            gpio.enablePCINT();
-            initializedP = true;
-        }
+        if (usePullupP)
+            gpio.setInputPullup();
+        else
+            gpio.setInput();
+        gpio.enablePCINT();
     }
 
 
     void notifyInterruptOccurred(uint32_t now, uint8_t changed) {
-        if (!initializedP) return;
         if (changed & gpio.mask) {
             if (!lastUnprocessedPrimeInterrupt) {
                 lastUnprocessedPrimeInterrupt = now;
@@ -122,7 +113,6 @@ class IntTransitionDebouncer {
 
     Transition processAnyInterrupts() {
         Transition transition { Transition::NONE };
-        if (!initializedP) return transition;
         uint32_t snapshotOfPrimeInterreuptTime { 0 };
         READ_VOLATILE_U32(lastUnprocessedPrimeInterrupt, snapshotOfPrimeInterreuptTime);
         if (snapshotOfPrimeInterreuptTime > 0) {
