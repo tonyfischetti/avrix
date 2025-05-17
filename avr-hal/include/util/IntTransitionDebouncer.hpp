@@ -78,20 +78,19 @@ namespace Utils {
 
 template<uint8_t physicalPin,
          uint32_t debounceWaitTime,
-         bool initial,
+         bool initialState,
          bool usePullupP>
 class IntTransitionDebouncer {
 
     HAL::GPIO::GPIO<physicalPin> gpio;
-    //  TODO  parameterize
     bool stableState;
+    volatile uint32_t lastUnprocessedPrimeInterrupt;
 
   public:
-    volatile uint32_t lastUnprocessedPrimeInterrupt;
 
     IntTransitionDebouncer() 
         : lastUnprocessedPrimeInterrupt { 0 },
-          stableState { initial } {
+          stableState { initialState } {
     }
 
     void begin() {
