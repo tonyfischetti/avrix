@@ -9,5 +9,3 @@
 #include "ticker.hpp"
 #include "uart.hpp"
 
-constexpr bool HIGH {  true };
-constexpr bool LOW  { false };

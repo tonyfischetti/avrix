@@ -8,7 +8,7 @@
 #include <util/atomic.h>
 #include <util/delay.h>
 
-#include "util/TransitionDebouncer.hpp"
+#include "util/IntTransitionDebouncer.hpp"
 #include "util/LFSR.hpp"
 
 
@@ -21,7 +21,7 @@ using WD   = HAL::Watchdog::Watchdog<14>;
 
 using lfsr = HAL::Utils::Random::LFSR;
 
-HAL::Utils::TransitionDebouncer<3> sw(HIGH, 30, true);
+HAL::Utils::IntTransitionDebouncer<3> sw(HIGH, 30, true);
 
 
 volatile bool timeToFlickerP  { false };
@@ -63,8 +63,9 @@ ISR(WDT_vect) {
 }
 
 ISR(PCINT0_vect) {
-    uint8_t current = PINB;
+    HAL::Ticker::resume(100);
     uint32_t now = HAL::Ticker::getNumTicks();
+    uint8_t current = PINB;
     uint8_t changed = current ^ previousPINB;
     previousPINB = current;
 
@@ -100,6 +101,9 @@ void start_sequence() {
 
 int main() {
 
+    power_adc_disable();
+    power_timer1_disable();
+
     LED1::setOutput();
     LED2::setOutput();
     LED3::setOutput();
@@ -111,6 +115,7 @@ int main() {
 
     HAL::Ticker::setupMSTimer();
     WD::reset();
+    sw.begin();
     sei();
 
     while (1) {
@@ -133,8 +138,10 @@ int main() {
             WD::reset();
         }
 
-        HAL::Sleep::goToSleep(SLEEP_MODE_IDLE);
-
+        if (!sw.pendingDebounceTimeout()) {
+            HAL::Ticker::pause();
+            HAL::Sleep::goToSleep(SLEEP_MODE_PWR_DOWN);
+        }
     }
 
     return 0;

@@ -8,6 +8,7 @@ namespace HAL {
 namespace Ticker {
 
 volatile uint32_t ticks = 0;
+volatile bool paused = false;
 
 constexpr struct PrescalerOption {
     uint16_t prescaler;
@@ -72,6 +73,21 @@ uint32_t getNumTicks() {
         value = ticks;
     }
     return value;
+}
+
+void pause() {
+    paused = true;
+    TCCR0B = 0;
+}
+
+void resume(uint16_t compTicks) {
+    if (paused) {
+        ATOMIC_BLOCK(ATOMIC_RESTORESTATE) {
+            ticks += compTicks;
+        }
+        paused = false;
+        setupMSTimer();
+    }
 }
 
 }

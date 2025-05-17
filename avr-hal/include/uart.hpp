@@ -2,6 +2,7 @@
 
 #include "hal_common.hpp"
 
+#include <stdio.h>
 #include <avr/io.h>
 #include <avr/sleep.h>
 #include <avr/interrupt.h>
@@ -49,6 +50,13 @@ inline void print(const char* str) {
 inline void println(const char* str) {
     print(str);
     printByte('\n');
+}
+
+//  TODO  
+inline void print(uint32_t n) {
+    char buf[20];
+    snprintf(buf, 20, "%lu", n);
+    println(buf);
 }
 
 #endif
