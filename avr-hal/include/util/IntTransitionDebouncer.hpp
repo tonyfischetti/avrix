@@ -94,7 +94,7 @@ class IntTransitionDebouncer {
     }
 
     void begin() {
-        if (usePullupP)
+        if constexpr (usePullupP)
             gpio.setInputPullup();
         else
             gpio.setInput();
