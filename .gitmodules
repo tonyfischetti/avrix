@@ -1,0 +1,3 @@
+[submodule "avril"]
+	path = avril
+	url = https://github.com/tonyfischetti/avril
