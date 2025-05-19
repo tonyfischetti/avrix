@@ -1,16 +1,13 @@
-#include "avril.hpp"
-
 #include <stdint.h>
 
 #include <avr/io.h>
 #include <avr/power.h>
-
 #include <util/atomic.h>
 #include <util/delay.h>
 
+#include "avril.hpp"
 #include "util/IntTransitionDebouncer.hpp"
 #include "util/LFSR.hpp"
-
 
 
 using GATE = HAL::GPIO::GPIO<5>;
@@ -21,39 +18,40 @@ using WD   = HAL::Watchdog::Watchdog<14>;
 
 using lfsr = HAL::Utils::Random::LFSR;
 
-HAL::Utils::IntTransitionDebouncer<3, 30, HIGH, true> sw;
 
+constexpr uint8_t NUM_MODES { 3 };
 
 volatile bool timeToFlickerP  { false };
 volatile uint8_t previousPINB { 0xFF  };
+volatile bool pin3ChangedP    { false };
 uint8_t mode                  { 0x00  };
 
-volatile bool pin3ChangedP { false };
-uint32_t lastChange { 0 };
+HAL::Utils::IntTransitionDebouncer<3, 30, HIGH, true> sw;
 
 
-
-void changeMode(bool forward = true) {
-    if (forward)
-        mode = static_cast<uint8_t>((mode + 1) % 3);
-    else 
-        mode = static_cast<uint8_t>((mode - 1) % 3);
-    //  TODO  use switch/case
-    if (!mode) {
-        GATE::setLow();
-        WD::reset();
-    } else if (mode == 1) {
-        GATE::setLow();
-        LED1::setHigh();
-        LED2::setHigh();
-        LED3::setHigh();
-        WD::disable();
-    } else {
-        LED1::setLow();
-        LED2::setLow();
-        LED3::setLow();
-        GATE::setHigh();
-        WD::disable();
+void changeMode() {
+    mode = static_cast<uint8_t>((mode + 1) % NUM_MODES);
+    switch (mode) {
+        case 0:
+            GATE::setLow();
+            WD::reset();
+            break;
+        case 1:
+            GATE::setLow();
+            LED1::setHigh();
+            LED2::setHigh();
+            LED3::setHigh();
+            WD::disable();
+            break;
+        case 2:
+            LED1::setLow();
+            LED2::setLow();
+            LED3::setLow();
+            GATE::setHigh();
+            WD::disable();
+            break;
+        default:
+            break;
     }
 }
 
@@ -63,7 +61,9 @@ ISR(WDT_vect) {
 }
 
 ISR(PCINT0_vect) {
-    HAL::Ticker::resume(100);
+    //  TODO  why, if I set this to 0, does it not work until 3 clicks?
+    //  TODO  and, when I don't use the onFalling callback, it's only 1
+    HAL::Ticker::resume(1);
     uint32_t now = HAL::Ticker::getNumTicks();
     uint8_t current = PINB;
     uint8_t changed = current ^ previousPINB;
@@ -109,8 +109,6 @@ int main() {
     LED3::setOutput();
     GATE::setOutput();
 
-    start_sequence();
-
     lfsr::init(93);
 
     HAL::Ticker::setupMSTimer();
@@ -118,20 +116,12 @@ int main() {
     sw.begin();
     sei();
 
+    start_sequence();
+
+    sw.setOnFalling(&changeMode);
+
     while (1) {
-
-
-        switch (sw.processAnyInterrupts()) {
-            case HAL::Transition::RISING:
-                break;
-            case HAL::Transition::FALLING:
-                changeMode();
-                break;
-            case HAL::Transition::NONE:
-                break;
-            default:
-                break;
-        }
+        sw.processAnyInterrupts();
 
         if (!mode) {
             if (timeToFlickerP) flicker();
