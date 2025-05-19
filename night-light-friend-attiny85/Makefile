@@ -29,7 +29,7 @@ CXXFLAGS   += -Wmissing-braces -Wnon-virtual-dtor -Winline
 CXXFLAGS   += -Wnormalized -Wold-style-cast
 CXXFLAGS   += -Wreturn-local-addr -Wsuggest-final-types
 CXXFLAGS   += -Wsuggest-override -Wvirtual-move-assign
-CXXFLAGS   += -Wuninitialized -Wswitch-enum -Wswitch
+CXXFLAGS   += -Wuninitialized # -Wswitch-enum -Wswitch
 
 LDFLAGS    := -Wl,--gc-sections -flto
 
