@@ -1,11 +1,11 @@
-#include "avr-hal.hpp"
+#include "avril.hpp"
 
 #include <avr/io.h>
 #include <avr/interrupt.h>
 #include <util/delay.h>
 
 #include "uart.hpp"
-#include "util/TransitionDebouncer.hpp"
+#include "util/IntTransitionDebouncer.hpp"
 
 
 

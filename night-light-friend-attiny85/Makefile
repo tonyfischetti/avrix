@@ -21,8 +21,9 @@ SRC        += $(wildcard $(HAL_LOC)/src/**/*.S)
 
 CXXFLAGS   := -mmcu=$(MCU) -DF_CPU=$(F_CPU)
 CXXFLAGS   += -I$(INC_DIR) -I$(HAL_LOC)/include
-CXXFLAGS   += -Os -Wall -std=gnu++17 -ffunction-sections -fdata-sections
-CXXFLAGS   += -Wextra -Wpedantic -Wshadow # -Wconversion # -Werror
+CXXFLAGS   += -Os -Wall -std=gnu++17 -flto -ffunction-sections
+CXXFLAGS   += -fdata-sections -Wextra -Wpedantic -Wshadow
+CXXFLAGS   +=  # -Wconversion # -Werror
 CXXFLAGS   += -Wsign-conversion -Wunreachable-code -Weffc++
 CXXFLAGS   += -Wmissing-braces -Wnon-virtual-dtor -Winline
 CXXFLAGS   += -Wnormalized -Wold-style-cast
@@ -30,7 +31,7 @@ CXXFLAGS   += -Wreturn-local-addr -Wsuggest-final-types
 CXXFLAGS   += -Wsuggest-override -Wvirtual-move-assign
 CXXFLAGS   += -Wuninitialized -Wswitch-enum -Wswitch
 
-LDFLAGS    := -Wl,--gc-sections
+LDFLAGS    := -Wl,--gc-sections -flto
 
 
 all: $(BUILD_DIR)/$(TARGET).hex
