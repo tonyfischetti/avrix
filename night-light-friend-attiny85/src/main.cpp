@@ -29,6 +29,32 @@ uint8_t mode                  { 0x00  };
 HAL::Utils::IntTransitionDebouncer<3, 30, HIGH, true> sw;
 
 
+
+ISR(WDT_vect) {
+    timeToFlickerP = true;
+}
+
+ISR(PCINT0_vect) {
+    //  TODO  why, if I set this to 0, does it not work until 3 clicks?
+    //  TODO  and, when I don't use the onFalling callback, it's only 1
+    HAL::Ticker::resume(1);
+    uint32_t now = HAL::Ticker::getNumTicks();
+    uint8_t current = PINB;
+    uint8_t changed = current ^ previousPINB;
+    previousPINB = current;
+
+    sw.notifyInterruptOccurred(now, changed);
+}
+
+
+void start_sequence() {
+    _delay_ms(500); LED1::setHigh();
+    _delay_ms(500); LED2::setHigh();
+    _delay_ms(500); LED3::setHigh();
+    _delay_ms(500); LED1::setLow(); LED2::setLow(); LED3::setLow();
+}
+
+
 void changeMode() {
     mode = static_cast<uint8_t>((mode + 1) % NUM_MODES);
     switch (mode) {
@@ -55,24 +81,6 @@ void changeMode() {
     }
 }
 
-
-ISR(WDT_vect) {
-    timeToFlickerP = true;
-}
-
-ISR(PCINT0_vect) {
-    //  TODO  why, if I set this to 0, does it not work until 3 clicks?
-    //  TODO  and, when I don't use the onFalling callback, it's only 1
-    HAL::Ticker::resume(1);
-    uint32_t now = HAL::Ticker::getNumTicks();
-    uint8_t current = PINB;
-    uint8_t changed = current ^ previousPINB;
-    previousPINB = current;
-
-    sw.notifyInterruptOccurred(now, changed);
-}
-
-
 void flicker() {
     static uint8_t currentRand { 0 };
     timeToFlickerP = false;
@@ -87,16 +95,6 @@ void flicker() {
        !(currentRand & (0x0f)))      LED3::setHigh();
     else                             LED3::setLow();
 }
-
-
-void start_sequence() {
-    _delay_ms(500); LED1::setHigh();
-    _delay_ms(500); LED2::setHigh();
-    _delay_ms(500); LED3::setHigh();
-    _delay_ms(500); LED1::setLow(); LED2::setLow(); LED3::setLow();
-}
-
-
 
 
 int main() {
