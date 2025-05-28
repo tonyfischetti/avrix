@@ -6,8 +6,9 @@
 #include "avril.hpp"
 #include "uart.hpp"
 #include "utils/IntTransitionDebouncer.hpp"
-#include "utils/IntButtonDebouncer.hpp"
+// #include "utils/IntButtonDebouncer.hpp"
 #include "drivers/RotaryEncoder.hpp"
+#include "drivers/Button.hpp"
 
 
 
@@ -41,7 +42,13 @@ using GATE = HAL::GPIO::GPIO<11>;
 
 
 // HAL::Utils::IntTransitionDebouncer<4,  30, HIGH, true> sw;
-HAL::Utils::IntButtonDebouncer<4, 30, 1000, HIGH, true> sw;
+// HAL::Utils::IntButtonDebouncer<4, 30, 1000, HIGH, true> sw;
+// HAL::Drivers::Button<4, 30, 1000, HIGH, true> sw;
+// HAL::Drivers::Button<4, 30, 1000, HIGH, true, true> sw;
+
+HAL::Drivers::Button<4, 30, 1000, HIGH, true> sw;
+   // HAL::Drivers::Button<4, 30, 1000, HIGH, true, true, false> sw;
+
 // HAL::Utils::IntTransitionDebouncer<5,  1,  HIGH, true> clk;
 HAL::Drivers::RotaryEncoder<5, 6, 1, HIGH, true> clk;
 HAL::Utils::IntTransitionDebouncer<14, 3,  HIGH, true> btn;
@@ -77,7 +84,7 @@ ISR(PCINT0_vect) {
 
 
 void incNumLEDs() {
-    numLEDs = (numLEDs + 1) % 4;
+    numLEDs = (numLEDs + 1) % 5;
 }
 
 void incrementNumLEDs() {
@@ -96,6 +103,14 @@ void toggleMainLED() {
 
 void toggleGate() {
     GATE::toggle();
+}
+
+void gateOn() {
+    GATE::setHigh();
+}
+
+void gateOff() {
+    GATE::setLow();
 }
 
 
@@ -140,7 +155,9 @@ int main(void) {
     HAL::UART::print(alice);
 
     sw.setOnLongPress(&toggleGate);
-    // sw.setOnRelease(&toggleMainLED);
+    // sw.setOnPress(&gateOn);
+    // sw.setOnRelease(&gateOff);
+    sw.setOnRelease(&incNumLEDs);
 
     clk.setOnCW(&incrementNumLEDs);
     clk.setOnCCW(&decrementNumLEDs);
@@ -149,6 +166,8 @@ int main(void) {
     while (1) {
 
         clk.process();
+
+        sw.process();
 
         /*
         switch (clk.process()) {

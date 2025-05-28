@@ -6,7 +6,8 @@
 #include <util/delay.h>
 
 #include "avril.hpp"
-#include "utils/IntButtonDebouncer.hpp"
+#include "drivers/Button.hpp"
+// #include "utils/IntButtonDebouncer.hpp"
 #include "utils/LFSR.hpp"
 
 
@@ -25,7 +26,8 @@ volatile uint8_t  previousPINB   { 0xFF  };
 volatile bool     pin3ChangedP   { false };
 uint8_t           mode           { 0x00  };
 
-HAL::Utils::IntButtonDebouncer<3, 30, 900, HIGH, true> sw;
+// HAL::Utils::IntButtonDebouncer<4, 30, 1000, HIGH, true> sw;
+HAL::Drivers::Button<3, 30, 1000, HIGH, true> sw;
 
 
 ISR(WDT_vect) {
