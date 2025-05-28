@@ -6,7 +6,7 @@
 #include <util/delay.h>
 
 #include "avril.hpp"
-#include "util/IntTransitionDebouncer.hpp"
+#include "util/IntButtonDebouncer.hpp"
 #include "util/LFSR.hpp"
 
 
@@ -19,15 +19,13 @@ using WD   = HAL::Watchdog::Watchdog<14>;
 using lfsr = HAL::Utils::Random::LFSR;
 
 
-constexpr uint8_t NUM_MODES { 3 };
+constexpr uint8_t NUM_MODES      { 3 };
+volatile bool     timeToFlickerP { false };
+volatile uint8_t  previousPINB   { 0xFF  };
+volatile bool     pin3ChangedP   { false };
+uint8_t           mode           { 0x00  };
 
-volatile bool timeToFlickerP  { false };
-volatile uint8_t previousPINB { 0xFF  };
-volatile bool pin3ChangedP    { false };
-uint8_t mode                  { 0x00  };
-
-HAL::Utils::IntTransitionDebouncer<3, 30, HIGH, true> sw;
-
+HAL::Utils::IntButtonDebouncer<3, 30, 900, HIGH, true> sw;
 
 
 ISR(WDT_vect) {
@@ -51,7 +49,8 @@ void start_sequence() {
     _delay_ms(500); LED1::setHigh();
     _delay_ms(500); LED2::setHigh();
     _delay_ms(500); LED3::setHigh();
-    _delay_ms(500); LED1::setLow(); LED2::setLow(); LED3::setLow();
+    _delay_ms(500);
+    LED1::setLow(); LED2::setLow(); LED3::setLow();
 }
 
 
@@ -70,6 +69,7 @@ void changeMode() {
             WD::disable();
             break;
         case 2:
+            GATE::setHigh();
             LED1::setLow();
             LED2::setLow();
             LED3::setLow();
@@ -79,6 +79,11 @@ void changeMode() {
         default:
             break;
     }
+}
+
+//  TODO  can I use a lambda for this?
+void toggleGate() {
+    GATE::toggle();
 }
 
 void flicker() {
@@ -116,20 +121,24 @@ int main() {
 
     start_sequence();
 
-    sw.setOnFalling(&changeMode);
+    // sw.setOnRelease(&changeMode);
+    sw.setOnLongPress(&changeMode);
+    // sw.setOnLongPress(&toggleGate);
 
     while (1) {
-        sw.processAnyInterrupts();
+            // GATE::setLow();
+        sw.process();
 
         if (!mode) {
             if (timeToFlickerP) flicker();
             WD::reset();
         }
 
-        if (!sw.pendingDebounceTimeout()) {
-            HAL::Ticker::pause();
-            HAL::Sleep::goToSleep(SLEEP_MODE_PWR_DOWN);
-        }
+        // if (!sw.pendingActionP()) {
+        //         // GATE::setHigh();
+        //     HAL::Ticker::pause();
+        //     HAL::Sleep::goToSleep(SLEEP_MODE_PWR_DOWN);
+        // }
     }
 
     return 0;

@@ -4,7 +4,7 @@
 -xc++
 -Os
 -Iinclude
--I../avr-hal/include
+-I../avril/include
 
 # debian
 -I/usr/lib/avr/include

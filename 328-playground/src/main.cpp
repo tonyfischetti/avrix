@@ -1,11 +1,12 @@
-#include "avril.hpp"
 
 #include <avr/io.h>
 #include <avr/interrupt.h>
 #include <util/delay.h>
 
+#include "avril.hpp"
 #include "uart.hpp"
 #include "util/IntTransitionDebouncer.hpp"
+#include "util/IntButtonDebouncer.hpp"
 
 
 
@@ -32,16 +33,16 @@ using GATE = HAL::GPIO::GPIO<11>;
 
 // using WD   = HAL::Watchdog::Watchdog<19>;
 
-HAL::GPIO::GPIO<4>  RE_SW;
-HAL::GPIO::GPIO<5>  RE_CLK;
+// HAL::GPIO::GPIO<4>  RE_SW;
+// HAL::GPIO::GPIO<5>  RE_CLK;
 HAL::GPIO::GPIO<6>  RE_DT;
-HAL::GPIO::GPIO<14> RAW_BTN;
+// HAL::GPIO::GPIO<14> RAW_BTN;
 
 
-HAL::Utils::TransitionDebouncer<4> sw(RE_SW, HIGH, 30);
-HAL::Utils::TransitionDebouncer<5> clk(RE_CLK, HIGH, 1);
-HAL::Utils::TransitionDebouncer<14> btn(RAW_BTN, HIGH, 3);
-
+// HAL::Utils::IntTransitionDebouncer<4,  30, HIGH, true> sw;
+HAL::Utils::IntButtonDebouncer<4, 30, 1000, HIGH, true> sw;
+HAL::Utils::IntTransitionDebouncer<5,  1,  HIGH, true> clk;
+HAL::Utils::IntTransitionDebouncer<14, 3,  HIGH, true> btn;
 
 
 ISR(PCINT2_vect) {
@@ -50,18 +51,9 @@ ISR(PCINT2_vect) {
     uint8_t changed = current ^ previousPIND;
     previousPIND = current;
 
-    if (changed & (1 << 2)) {
-        if (!sw.lastUnprocessedInterrupt) {
-            sw.lastUnprocessedInterrupt = now;
-        }
-    }
+    sw.notifyInterruptOccurred(now, changed);
 
-    if (changed & (1 << 3)) {
-        if (!clk.lastUnprocessedInterrupt) {
-            clk.lastUnprocessedInterrupt = now;
-        }
-    }
-
+    clk.notifyInterruptOccurred(now, changed);
     
 }
 
@@ -72,12 +64,7 @@ ISR(PCINT0_vect) {
     uint8_t changed = current ^ previousPINB;
     previousPINB = current;
 
-    if (changed & 0x01) {
-        // HAL::UART::printByte('!');
-        if (!btn.lastUnprocessedInterrupt) {
-            btn.lastUnprocessedInterrupt = now;
-        }
-    }
+    btn.notifyInterruptOccurred(now, changed);
 }
 
 
@@ -86,6 +73,14 @@ ISR(PCINT0_vect) {
 //     watchdogBarkedP = true;
 // }
 
+
+void incNumLEDs() {
+    numLEDs = (numLEDs + 1) % 4;
+}
+
+void toggleMainLED() {
+    LED0::toggle();
+}
 
 
 static char alice[] = "::alice glass:: HI!\n";
@@ -106,10 +101,7 @@ int main(void) {
 
     HAL::UART::init<9600>();
 
-    RE_SW.setInputPullup();
-    RE_CLK.setInputPullup();
-    RE_DT.setInputPullup();
-    RAW_BTN.setInputPullup();
+    // RE_DT.setInputPullup();
     LED0::setOutput();
     LED1::setOutput();
     LED2::setOutput();
@@ -118,41 +110,41 @@ int main(void) {
     MD2::setInput(); // pulled-down
     MD3::setInput(); // pulled-down
 
-
-    RE_SW.enablePCINT();
-    RE_CLK.enablePCINT();
-    RAW_BTN.enablePCINT();
-    
-    // WD::reset();
-    
     HAL::Ticker::setupMSTimer();
 
-
+    sw.begin();
+    clk.begin();
+    btn.begin();
+    // WD::reset();
+    
     sei();
 
     start_sequence();
 
     HAL::UART::print(alice);
 
+    sw.setOnLongPress(&incNumLEDs);
+    sw.setOnRelease(&toggleMainLED);
+
 
     while (1) {
 
-        // TODO 
-        // TODO 
-        // only big problems left are now:
-        //   - rising is laggy (too long weight)
-        //   - no <4> nonsense
-        //   - privatize lastUnprocessedInterrupt
-        switch (sw.processAnyInterrupts()) {
-            case HAL::Transition::RISING:
-                // LED0::toggle();
+        sw.process();
+
+        /*
+        switch (sw.process()) {
+            case HAL::ButtonAction::RELEASE:
                 break;
-            case HAL::Transition::FALLING:
+            case HAL::ButtonAction::PRESS:
+                break;
+            case HAL::ButtonAction::LONG_PRESS:
                 LED0::toggle();
+                // GATE::toggle();
                 break;
             default:
                 break;
         }
+        */
 
         switch (clk.processAnyInterrupts()) {
             case HAL::Transition::RISING:
