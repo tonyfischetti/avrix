@@ -80,6 +80,16 @@ void incNumLEDs() {
     numLEDs = (numLEDs + 1) % 4;
 }
 
+void incrementNumLEDs() {
+    if (numLEDs != 4)
+        numLEDs++;
+}
+
+void decrementNumLEDs() {
+    if (numLEDs != 0)
+        numLEDs--;
+}
+
 void toggleMainLED() {
     LED0::toggle();
 }
@@ -132,9 +142,15 @@ int main(void) {
     sw.setOnLongPress(&toggleGate);
     // sw.setOnRelease(&toggleMainLED);
 
+    clk.setOnCW(&incrementNumLEDs);
+    clk.setOnCCW(&decrementNumLEDs);
+
 
     while (1) {
 
+        clk.process();
+
+        /*
         switch (clk.process()) {
             case HAL::RotaryEncoderAction::CW:
                 if (numLEDs != 4)
@@ -147,6 +163,7 @@ int main(void) {
             default:
                 break;
         }
+        */
 
         /*
         switch (sw.process()) {
