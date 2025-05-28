@@ -6,8 +6,8 @@
 #include <util/delay.h>
 
 #include "avril.hpp"
-#include "util/IntButtonDebouncer.hpp"
-#include "util/LFSR.hpp"
+#include "utils/IntButtonDebouncer.hpp"
+#include "utils/LFSR.hpp"
 
 
 using GATE = HAL::GPIO::GPIO<5>;

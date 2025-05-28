@@ -5,8 +5,9 @@
 
 #include "avril.hpp"
 #include "uart.hpp"
-#include "util/IntTransitionDebouncer.hpp"
-#include "util/IntButtonDebouncer.hpp"
+#include "utils/IntTransitionDebouncer.hpp"
+#include "utils/IntButtonDebouncer.hpp"
+#include "drivers/RotaryEncoder.hpp"
 
 
 
@@ -35,13 +36,14 @@ using GATE = HAL::GPIO::GPIO<11>;
 
 // HAL::GPIO::GPIO<4>  RE_SW;
 // HAL::GPIO::GPIO<5>  RE_CLK;
-HAL::GPIO::GPIO<6>  RE_DT;
+// HAL::GPIO::GPIO<6>  RE_DT;
 // HAL::GPIO::GPIO<14> RAW_BTN;
 
 
 // HAL::Utils::IntTransitionDebouncer<4,  30, HIGH, true> sw;
 HAL::Utils::IntButtonDebouncer<4, 30, 1000, HIGH, true> sw;
-HAL::Utils::IntTransitionDebouncer<5,  1,  HIGH, true> clk;
+// HAL::Utils::IntTransitionDebouncer<5,  1,  HIGH, true> clk;
+HAL::Drivers::RotaryEncoder<5, 6, 1, HIGH, true> clk;
 HAL::Utils::IntTransitionDebouncer<14, 3,  HIGH, true> btn;
 
 
@@ -80,6 +82,10 @@ void incNumLEDs() {
 
 void toggleMainLED() {
     LED0::toggle();
+}
+
+void toggleGate() {
+    GATE::toggle();
 }
 
 
@@ -123,13 +129,24 @@ int main(void) {
 
     HAL::UART::print(alice);
 
-    sw.setOnLongPress(&incNumLEDs);
-    sw.setOnRelease(&toggleMainLED);
+    sw.setOnLongPress(&toggleGate);
+    // sw.setOnRelease(&toggleMainLED);
 
 
     while (1) {
 
-        sw.process();
+        switch (clk.process()) {
+            case HAL::RotaryEncoderAction::CW:
+                if (numLEDs != 4)
+                    numLEDs++;
+                break;
+            case HAL::RotaryEncoderAction::CCW:
+                if (numLEDs != 0)
+                    numLEDs--;
+                break;
+            default:
+                break;
+        }
 
         /*
         switch (sw.process()) {
@@ -146,15 +163,17 @@ int main(void) {
         }
         */
 
+        /*
         switch (clk.processAnyInterrupts()) {
             case HAL::Transition::RISING:
                 break;
             case HAL::Transition::FALLING:
-                numLEDs = (numLEDs + 1) % 4;
+                numLEDs = (numLEDs + 1) % 5;
                 break;
             default:
                 break;
         }
+        */
 
         switch (btn.processAnyInterrupts()) {
             case HAL::Transition::RISING:
@@ -166,9 +185,12 @@ int main(void) {
                 break;
         }
 
+        LED0::setLow();
         LED1::setLow();
         LED2::setLow();
         LED3::setLow();
+        if (numLEDs > 3)
+            LED0::setHigh();
         if (numLEDs > 2) 
             LED3::setHigh();
         if (numLEDs > 1)
