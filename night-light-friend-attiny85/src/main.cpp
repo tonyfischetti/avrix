@@ -123,12 +123,11 @@ int main() {
 
     start_sequence();
 
-    // sw.setOnRelease(&changeMode);
+    sw.setOnRelease(&changeMode);
     sw.setOnLongPress(&changeMode);
     // sw.setOnLongPress(&toggleGate);
 
     while (1) {
-            // GATE::setLow();
         sw.process();
 
         if (!mode) {
@@ -136,11 +135,10 @@ int main() {
             WD::reset();
         }
 
-        // if (!sw.pendingActionP()) {
-        //         // GATE::setHigh();
-        //     HAL::Ticker::pause();
-        //     HAL::Sleep::goToSleep(SLEEP_MODE_PWR_DOWN);
-        // }
+        if (!sw.pendingDebounceTimeout()) {
+            HAL::Ticker::pause();
+            HAL::Sleep::goToSleep(SLEEP_MODE_PWR_DOWN);
+        }
     }
 
     return 0;
