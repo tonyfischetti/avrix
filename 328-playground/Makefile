@@ -41,7 +41,8 @@ all: $(BUILD_DIR)/$(TARGET).hex
 $(BUILD_DIR)/%.elf: $(SRC)
 	@mkdir -p $(BUILD_DIR)
 	$(CXX) $(CXXFLAGS) $(LDFLAGS) $^ -o $@
-	$(SIZE) $@
+	$(SIZE) -G --mcu=$(MCU) $@
+# avr-nm -S --size-sort -C $@
 
 $(BUILD_DIR)/%.hex: $(BUILD_DIR)/%.elf
 	$(OBJCOPY) -O ihex -R .eeprom $< $@

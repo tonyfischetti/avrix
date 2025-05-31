@@ -83,35 +83,6 @@ ISR(PCINT0_vect) {
 // }
 
 
-void incNumLEDs() {
-    numLEDs = (numLEDs + 1) % 5;
-}
-
-void incrementNumLEDs() {
-    if (numLEDs != 4)
-        numLEDs++;
-}
-
-void decrementNumLEDs() {
-    if (numLEDs != 0)
-        numLEDs--;
-}
-
-void toggleMainLED() {
-    LED0::toggle();
-}
-
-void toggleGate() {
-    GATE::toggle();
-}
-
-void gateOn() {
-    GATE::setHigh();
-}
-
-void gateOff() {
-    GATE::setLow();
-}
 
 
 static char alice[] = "::alice glass:: HI!\n";
@@ -154,14 +125,14 @@ int main(void) {
 
     HAL::UART::print(alice);
 
-    sw.setOnLongPress(&toggleGate);
+    sw.setOnLongPress([]() { GATE::toggle(); });
+
     // sw.setOnPress(&gateOn);
     // sw.setOnRelease(&gateOff);
-    sw.setOnRelease(&incNumLEDs);
+    sw.setOnRelease([]() { numLEDs = (numLEDs + 1) % 5; });
 
-    clk.setOnCW(&incrementNumLEDs);
-    clk.setOnCCW(&decrementNumLEDs);
-
+    clk.setOnCW( []() { if (numLEDs != 4) numLEDs++; });
+    clk.setOnCCW([]() { if (numLEDs != 0) numLEDs--; });
 
     while (1) {
 
