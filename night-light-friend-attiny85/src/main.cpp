@@ -37,7 +37,7 @@ ISR(WDT_vect) {
 ISR(PCINT0_vect) {
     //  TODO  why, if I set this to 0, does it not work until 3 clicks?
     //  TODO  and, when I don't use the onFalling callback, it's only 1
-    HAL::Ticker::resume(1);
+    // HAL::Ticker::resume(1);
     uint32_t now = HAL::Ticker::getNumTicks();
     uint8_t current = PINB;
     uint8_t changed = current ^ previousPINB;
@@ -135,10 +135,10 @@ int main() {
             WD::reset();
         }
 
-        if (!sw.pendingDebounceTimeout()) {
-            HAL::Ticker::pause();
-            HAL::Sleep::goToSleep(SLEEP_MODE_PWR_DOWN);
-        }
+        // if (!sw.pendingDebounceTimeout()) {
+        //     HAL::Ticker::pause();
+        //     HAL::Sleep::goToSleep(SLEEP_MODE_PWR_DOWN);
+        // }
     }
 
     return 0;

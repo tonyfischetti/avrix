@@ -4,6 +4,7 @@
 
 ; .section .text
 .global start
+.type start, @function
 .global blink
 
 
