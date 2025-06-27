@@ -14,7 +14,7 @@ extern "C" {
     void sendbyte(uint8_t b);
 }
 
-static   uint8_t numRows        {    1 };
+static   uint8_t numRows        {    0 };
 static   uint8_t brightness     {  255 };
 volatile uint8_t previousPINB	{ 0xFF };
 
@@ -119,17 +119,17 @@ int main() {
 
         _delay_ms(10);
 
-        for (uint8_t i = 0; i < (numRows); i++) {
-            sendQuadruplet(brightness, brightness/5, 1, 0);
-            sendQuadruplet(brightness, brightness/5, 1, 0);
-            sendQuadruplet(brightness, brightness/5, 1, 0);
-            sendQuadruplet(brightness, brightness/5, 1, 0);
-            sendQuadruplet(brightness, brightness/5, 1, 0);
-            sendQuadruplet(brightness, brightness/5, 1, 0);
-            sendQuadruplet(brightness, brightness/5, 1, 0);
-            sendQuadruplet(brightness, brightness/5, 1, 0);
-            _delay_us(20);
-        }
+        // for (uint8_t i = 0; i < (numRows); i++) {
+        //     sendQuadruplet(brightness, brightness/5, 1, 0);
+        //     sendQuadruplet(brightness, brightness/5, 1, 0);
+        //     sendQuadruplet(brightness, brightness/5, 1, 0);
+        //     sendQuadruplet(brightness, brightness/5, 1, 0);
+        //     sendQuadruplet(brightness, brightness/5, 1, 0);
+        //     sendQuadruplet(brightness, brightness/5, 1, 0);
+        //     sendQuadruplet(brightness, brightness/5, 1, 0);
+        //     sendQuadruplet(brightness, brightness/5, 1, 0);
+        //     _delay_us(20);
+        // }
 
         _delay_ms(100);
 
