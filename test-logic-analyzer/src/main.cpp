@@ -17,18 +17,23 @@ extern "C" {
 
 
 using NEO = HAL::GPIO::GPIO<5>;
+using LED = HAL::GPIO::GPIO<6>;
 HAL::Drivers::Button<3, 30, 1000, HIGH, true>     sw;
 HAL::Drivers::RotaryEncoder<7, 2, 0, HIGH, true> clk;
 
 
 volatile uint8_t previousPINB	{  0xFF };
 volatile uint8_t abortTxP	    { false };
-volatile uint8_t numPixels      {     5 };
+static   uint8_t numRows        {     1 };
+static   uint8_t brightness     {     0 };
 
 
-void addAnotherPixel() {
-    numPixels++;
+
+void addAnotherRow() {
+    // LED::setHigh();
+    numRows = (numRows + 1) % 5;
 }
+
 
 /**
  * 4.875 us
@@ -58,6 +63,19 @@ ISR(PCINT0_vect) {
     clk.notifyInterruptOccurred(now, changed);
 }
 
+void increaseBrightness() {
+    if (brightness > 245)
+        brightness = 255;
+    else
+        brightness += 5;
+}
+
+void decreaseBrightness() {
+    if (brightness < 5)
+        brightness = 0;
+    else
+        brightness -= 5;
+}
 
 
 void sendPixel(uint8_t red,
@@ -70,20 +88,6 @@ void sendPixel(uint8_t red,
     sendbyte(warm);
 }
 
-void clearPixel() {
-    sendPixel(0, 0, 0, 0);
-}
-
-void flood(uint8_t red,
-           uint8_t green,
-           uint8_t blue,
-           uint8_t warm) {
-    _delay_us(100);
-    for (uint8_t i = 0; i <= numPixels; i++) {
-        sendPixel(red, green, blue, warm);
-    }
-    _delay_us(80);
-}
 
 
 int main() {
@@ -92,31 +96,57 @@ int main() {
     power_timer1_disable();
 
     NEO::setOutput();
+    LED::setOutput();
+
     HAL::Ticker::setupMSTimer();
+
     sw.begin();
     clk.begin();
+
     sei();
 
 
-    sw.setOnRelease(&addAnotherPixel);
+    sw.setOnRelease(&addAnotherRow);
+    clk.setOnCW(&increaseBrightness);
+    clk.setOnCCW(&decreaseBrightness);
 
-    _delay_ms(500);
+    // _delay_ms(2000);
 
     while (1) {
 
         sw.process();
         clk.process();
 
-        _delay_us(300);
 
-        sendPixel(255, 56, 1, 0);
-        sendPixel(255, 56, 1, 0);
-        sendPixel(255, 56, 1, 0);
-        sendPixel(255, 56, 1, 0);
-        sendPixel(255, 56, 1, 0);
-        sendPixel(255, 56, 1, 0);
-        sendPixel(255, 56, 1, 0);
-        sendPixel(255, 56, 1, 0);
+        // sendPixel(255, 56, 1, 0);
+        // sendPixel(100, 10, 1, 0);
+
+        for (uint8_t i = 0; i < static_cast<uint8_t>(32); i++) {
+            sendPixel(0, 0, 0, 0);
+        }
+
+        _delay_us(80); // sufficient
+        // _delay_ms(1000);
+
+        // for (uint8_t i = 0; i < (8*numRows); i++) {
+        // I think the multiplication takes it over the edge
+
+        // for (uint8_t i = 0; i < (8*4); i++) {
+        for (auto i = 0; i < (8*numRows); i++) {
+            // sendPixel(100, 10, 1, 0);
+            // sendPixel(brightness, 10, 1, 0);
+            sendPixel(brightness, 56, 1, 0);
+            // sendPixel(brightness, 0, 0, 0);
+        }
+
+        // while (1) { }
+
+        // sendPixel(255, 56, 1, 0);
+        // sendPixel(255, 56, 1, 0);
+        // sendPixel(255, 56, 1, 0);
+        // sendPixel(255, 56, 1, 0);
+        // sendPixel(255, 56, 1, 0);
+        // sendPixel(255, 56, 1, 0);
 
 
         // if (abortTxP) {
@@ -125,6 +155,19 @@ int main() {
         //         sendPixel(0, 255, 0, 0);
         //     }
         // }
+
+        if (numRows > 0) {
+            LED::setLow();
+        }
+        else {
+            LED::setHigh();
+        }
+
+        if (!sw.pendingDebounceTimeout() &&
+            !clk.pendingDebounceTimeout()) {
+            // HAL::Ticker::pause(); //  TODO  SOMETHING ABOUT THIS BREAKS LIGHT
+            HAL::Sleep::goToSleep(SLEEP_MODE_PWR_DOWN);
+        }
 
     }
 }

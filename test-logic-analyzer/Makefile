@@ -26,7 +26,7 @@ CFLAGS 		:= -mmcu=$(MCU) -DF_CPU=$(F_CPU)
 
 CXXFLAGS   := -mmcu=$(MCU) -DF_CPU=$(F_CPU)
 CXXFLAGS   += -I$(INC_DIR) -I$(HAL_LOC)/include
-CXXFLAGS   += -Os -Wall -std=gnu++17 -flto -ffunction-sections
+CXXFLAGS   += -Os -Wall -std=gnu++2a -flto -ffunction-sections
 CXXFLAGS   += -fdata-sections -Wextra -Wpedantic -Wshadow
 CXXFLAGS   +=  # -Wconversion # -Werror
 CXXFLAGS   += -Wsign-conversion -Wunreachable-code -Weffc++
