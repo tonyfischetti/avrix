@@ -9,8 +9,6 @@
 #include "drivers/Button.hpp"
 #include "drivers/RotaryEncoder.hpp"
 
-#include "Mode.hpp"
-
 
 extern "C" {
     void flip();
@@ -32,7 +30,7 @@ static    uint8_t  brightness     {     0 };
 static    uint16_t strobeInterval {   500 };
 
 using PatternFunction = void (*)();
-constexpr uint8_t         NUM_PATTERNS              { 3 };
+constexpr uint8_t         NUM_PATTERNS              { 4 };
 static    uint8_t         currentPatternIndex       { 0 };
 static    PatternFunction patternList[NUM_PATTERNS] {   };
 
@@ -46,6 +44,15 @@ void nextPattern() {
 
 void addAnotherRow() {
     numRows = (numRows + 1) % TOTAL_ROWS;
+}
+
+//  TODO  improve dryness
+void increaseStrobeInterval() {
+    strobeInterval += 10;
+}
+
+void decreaseStrobeInterval() {
+    strobeInterval -= 10;
 }
 
 void increaseBrightness() {
@@ -100,6 +107,9 @@ void clearPixels() {
 
 
 void warmColorPattern() {
+    clk.setOnCW(&increaseBrightness);
+    clk.setOnCCW(&decreaseBrightness);
+
     for (auto i = 0; i < numRows; i++) {
         sendPixel(brightness, brightness >> 2, 1, 0);
         if (abortTxP) return;
@@ -122,6 +132,9 @@ void warmColorPattern() {
 }
 
 void warmLightPattern() {
+    clk.setOnCW(&increaseBrightness);
+    clk.setOnCCW(&decreaseBrightness);
+
     uint8_t totalPixels { static_cast<uint8_t>(numRows * 8) };
     for (uint8_t i = 0; i < totalPixels; i++) {
         sendPixel(0, 0, 0, brightness);
@@ -131,16 +144,127 @@ void warmLightPattern() {
 }
 
 void warmStrobePattern() {
-    uint8_t onP { false };
+    clk.setOnCW(&increaseStrobeInterval);
+    clk.setOnCCW(&decreaseStrobeInterval);
+
+    // uint8_t onP { false };
     while (1) {
+
         uint8_t totalPixels { static_cast<uint8_t>(numRows * 8) };
+
+        if (abortTxP) return;
+
         for (uint8_t i = 0; i < totalPixels; i++) {
-            sendPixel(0, 0, 0, brightness);
+            // sendPixel(0, 0, 0, brightness);
+            sendPixel(0, 0, 0, 255);
             if (abortTxP) return;
         }
         _delay_us(LATCH_TIME_US);
+        for (uint16_t i = 0; i < strobeInterval; i++) {
+            _delay_ms(1);
+            if (abortTxP) return;
+        }
+
+        for (uint8_t i = 0; i < totalPixels; i++) {
+            sendPixel(0, 0, 0, 0);
+            if (abortTxP) return;
+        }
+        _delay_us(LATCH_TIME_US);
+        for (uint16_t i = 0; i < strobeInterval; i++) {
+            _delay_ms(1);
+            if (abortTxP) return;
+        }
+        if (abortTxP) return;
+
     }
 }
+
+
+void bisexualStrobePattern() {
+    clk.setOnCW(&increaseStrobeInterval);
+    clk.setOnCCW(&decreaseStrobeInterval);
+
+    // uint8_t onP { false };
+    while (1) {
+
+        uint8_t totalPixels { static_cast<uint8_t>(numRows * 8) };
+
+        if (abortTxP) return;
+
+        for (uint8_t i = 0; i < totalPixels; i++) {
+            // sendPixel(0, 0, 0, brightness);
+            sendPixel(255, 0, 121, 0);
+            if (abortTxP) return;
+        }
+        _delay_us(LATCH_TIME_US);
+        for (uint16_t i = 0; i < strobeInterval; i++) {
+            _delay_ms(1);
+            if (abortTxP) return;
+        }
+        if (abortTxP) return;
+
+
+        for (uint8_t i = 0; i < totalPixels; i++) {
+            sendPixel(0, 0, 0, 0);
+            if (abortTxP) return;
+        }
+        _delay_us(LATCH_TIME_US);
+        for (uint16_t i = 0; i < strobeInterval; i++) {
+            _delay_ms(1);
+            if (abortTxP) return;
+        }
+        if (abortTxP) return;
+
+
+        for (uint8_t i = 0; i < totalPixels; i++) {
+            // sendPixel(0, 0, 0, brightness);
+            sendPixel(255, 0, 255, 0);
+            if (abortTxP) return;
+        }
+        _delay_us(LATCH_TIME_US);
+        for (uint16_t i = 0; i < strobeInterval; i++) {
+            _delay_ms(1);
+            if (abortTxP) return;
+        }
+        if (abortTxP) return;
+
+        for (uint8_t i = 0; i < totalPixels; i++) {
+            sendPixel(0, 0, 0, 0);
+            if (abortTxP) return;
+        }
+        _delay_us(LATCH_TIME_US);
+        for (uint16_t i = 0; i < strobeInterval; i++) {
+            _delay_ms(1);
+            if (abortTxP) return;
+        }
+        if (abortTxP) return;
+
+        for (uint8_t i = 0; i < totalPixels; i++) {
+            // sendPixel(0, 0, 0, brightness);
+            sendPixel(0, 0, 255, 0);
+            if (abortTxP) return;
+        }
+        _delay_us(LATCH_TIME_US);
+        for (uint16_t i = 0; i < strobeInterval; i++) {
+            _delay_ms(1);
+            if (abortTxP) return;
+        }
+        if (abortTxP) return;
+
+        for (uint8_t i = 0; i < totalPixels; i++) {
+            sendPixel(0, 0, 0, 0);
+            if (abortTxP) return;
+        }
+        _delay_us(LATCH_TIME_US);
+        for (uint16_t i = 0; i < strobeInterval; i++) {
+            _delay_ms(1);
+            if (abortTxP) return;
+        }
+        if (abortTxP) return;
+
+    }
+}
+
 
 
 int main() {
@@ -161,11 +285,12 @@ int main() {
     patternList[0] = &warmColorPattern;
     patternList[1] = &warmLightPattern;
     patternList[2] = &warmStrobePattern;
+    patternList[3] = &bisexualStrobePattern;
 
     sw.setOnRelease(&addAnotherRow);
     sw.setOnLongPress(&nextPattern);
-    clk.setOnCW(&increaseBrightness);
-    clk.setOnCCW(&decreaseBrightness);
+    // clk.setOnCW(&increaseBrightness);
+    // clk.setOnCCW(&decreaseBrightness);
 
 
     while (1) {
