@@ -13,6 +13,7 @@ HAL_LOC    := ../avril
 CC         := avr-gcc
 CXX        := avr-g++
 OBJCOPY    := avr-objcopy
+OBJDUMP    := avr-objdump
 SIZE       := avr-size
 AVRDUDE    := avrdude
 PROGRAMMER := usbtiny
@@ -39,12 +40,15 @@ CXXFLAGS   += -Wuninitialized # -Wswitch-enum -Wswitch
 LDFLAGS    := -Wl,--gc-sections -flto
 
 
-all: $(BUILD_DIR)/low.o $(BUILD_DIR)/$(TARGET).hex
+all: $(BUILD_DIR)/low.o $(BUILD_DIR)/$(TARGET).elf $(BUILD_DIR)/$(TARGET)-disasm.txt $(BUILD_DIR)/$(TARGET).hex
 
 debug:
 	echo $(SRC)
 
 #  TODO  improve (.S)
+
+$(BUILD_DIR)/$(TARGET)-disasm.txt: $(BUILD_DIR)/$(TARGET).elf
+	$(OBJDUMP) -d $^ > $@
 
 $(BUILD_DIR)/%.elf: $(SRC) $(BUILD_DIR)/low.o
 	@mkdir -p $(BUILD_DIR)

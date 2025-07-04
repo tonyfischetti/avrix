@@ -23,7 +23,7 @@ using LED = HAL::GPIO::GPIO<6>;
 HAL::Drivers::Button<3, 30, 1000, HIGH, true>     sw;
 HAL::Drivers::RotaryEncoder<7, 2, 0, HIGH, true> clk;
 
-constexpr uint8_t  LATCH_TIME_US  {    60 };
+constexpr uint8_t  LATCH_TIME_US  {    80 };
 constexpr uint8_t  NUM_PIXELS     {    32 };
 constexpr uint8_t  TOTAL_ROWS     {     5 }; // 0 counts
 volatile  uint8_t  previousPINB	  {  0xFF };
@@ -33,7 +33,7 @@ static    uint8_t  brightness     {     0 };
 static    uint16_t strobeInterval {   500 };
 
 using PatternFunction = void (*)();
-constexpr uint8_t         NUM_PATTERNS              { 4 };
+constexpr uint8_t         NUM_PATTERNS              { 3 };
 static    uint8_t         currentPatternIndex       { 0 };
 static    PatternFunction patternList[NUM_PATTERNS] {   };
 
@@ -43,7 +43,6 @@ static    PatternFunction patternList[NUM_PATTERNS] {   };
 
 void nextPattern() {
     currentPatternIndex = (currentPatternIndex + 1) % NUM_PATTERNS;
-    abortTxP = true;
 }
 
 void addAnotherRow() {
@@ -145,6 +144,7 @@ void warmLightPattern() {
 
     uint8_t totalPixels { static_cast<uint8_t>(numRows * 8) };
     for (uint8_t i = 0; i < totalPixels; i++) {
+        // sendPixel(0, 0, 0, brightness);
         send_pixel_4_args(0, 0, 0, brightness);
         if (abortTxP) return;
     }
@@ -160,42 +160,58 @@ void warmStrobePattern() {
 
         uint8_t totalPixels { static_cast<uint8_t>(numRows * 8) };
 
-        checkPeripherals();
-        if (abortTxP) return;
+        if (abortTxP) {
+            checkPeripherals();
+            return;
+        }
 
         for (uint8_t i = 0; i < totalPixels; i++) {
             send_pixel_4_args(0, 0, 0, 255);
-            if (abortTxP) return;
+            if (abortTxP) {
+                checkPeripherals();
+                return;
+            }
         }
-        checkPeripherals();
-        if (abortTxP) return;
+            if (abortTxP) {
+                checkPeripherals();
+                return;
+            }
         _delay_us(LATCH_TIME_US);
-        checkPeripherals();
-        if (abortTxP) return;
+            if (abortTxP) {
+                checkPeripherals();
+                return;
+            }
         for (uint16_t i = 0; i < strobeInterval; i++) {
             _delay_ms(1);
-            checkPeripherals();
-            if (abortTxP) return;
+            if (abortTxP) {
+                checkPeripherals();
+                return;
+            }
         }
 
         for (uint8_t i = 0; i < totalPixels; i++) {
             send_pixel_4_args(0, 0, 0, 0);
-            checkPeripherals();
-            if (abortTxP) return;
+            if (abortTxP) {
+                checkPeripherals();
+                return;
+            }
         }
-        checkPeripherals();
-        if (abortTxP) return;
         _delay_us(LATCH_TIME_US);
-        checkPeripherals();
-        if (abortTxP) return;
+            if (abortTxP) {
+                checkPeripherals();
+                return;
+            }
         for (uint16_t i = 0; i < strobeInterval; i++) {
             _delay_ms(1);
-            checkPeripherals();
-            if (abortTxP) return;
+            if (abortTxP) {
+                checkPeripherals();
+                return;
+            }
         }
-        checkPeripherals();
-        if (abortTxP) return;
-
+        if (abortTxP) {
+            checkPeripherals();
+            return;
+        }
     }
 }
 
@@ -209,113 +225,79 @@ void bisexualStrobePattern() {
 
         uint8_t totalPixels { static_cast<uint8_t>(numRows * 8) };
 
-        checkPeripherals();
         if (abortTxP) return;
 
         for (uint8_t i = 0; i < totalPixels; i++) {
-            send_pixel_4_args(255, 0, 121, 0);
-            checkPeripherals();
+            // sendPixel(0, 0, 0, brightness);
+            sendPixel(255, 0, 121, 0);
             if (abortTxP) return;
         }
         _delay_us(LATCH_TIME_US);
         for (uint16_t i = 0; i < strobeInterval; i++) {
-            checkPeripherals();
-            if (abortTxP) return;
             _delay_ms(1);
+            if (abortTxP) return;
         }
         if (abortTxP) return;
 
 
         for (uint8_t i = 0; i < totalPixels; i++) {
-            send_pixel_4_args(0, 0, 0, 0);
-            checkPeripherals();
+            sendPixel(0, 0, 0, 0);
             if (abortTxP) return;
         }
-        checkPeripherals();
-        if (abortTxP) return;
         _delay_us(LATCH_TIME_US);
-        checkPeripherals();
-        if (abortTxP) return;
         for (uint16_t i = 0; i < strobeInterval; i++) {
-            checkPeripherals();
-            if (abortTxP) return;
             _delay_ms(1);
+            if (abortTxP) return;
         }
-        checkPeripherals();
         if (abortTxP) return;
 
 
         for (uint8_t i = 0; i < totalPixels; i++) {
-            send_pixel_4_args(255, 0, 255, 0);
-            checkPeripherals();
+            // sendPixel(0, 0, 0, brightness);
+            sendPixel(255, 0, 255, 0);
             if (abortTxP) return;
         }
-        checkPeripherals();
-        if (abortTxP) return;
         _delay_us(LATCH_TIME_US);
-        checkPeripherals();
-        if (abortTxP) return;
         for (uint16_t i = 0; i < strobeInterval; i++) {
-            checkPeripherals();
-            if (abortTxP) return;
             _delay_ms(1);
+            if (abortTxP) return;
         }
-        checkPeripherals();
         if (abortTxP) return;
 
         for (uint8_t i = 0; i < totalPixels; i++) {
-            send_pixel_4_args(0, 0, 0, 0);
-            checkPeripherals();
+            sendPixel(0, 0, 0, 0);
             if (abortTxP) return;
         }
-        checkPeripherals();
-        if (abortTxP) return;
         _delay_us(LATCH_TIME_US);
-        checkPeripherals();
-        if (abortTxP) return;
         for (uint16_t i = 0; i < strobeInterval; i++) {
-            checkPeripherals();
-            if (abortTxP) return;
             _delay_ms(1);
+            if (abortTxP) return;
         }
-        checkPeripherals();
         if (abortTxP) return;
 
         for (uint8_t i = 0; i < totalPixels; i++) {
-            send_pixel_4_args(0, 0, 255, 0);
-            checkPeripherals();
+            // sendPixel(0, 0, 0, brightness);
+            sendPixel(0, 0, 255, 0);
             if (abortTxP) return;
         }
-        checkPeripherals();
-        if (abortTxP) return;
         _delay_us(LATCH_TIME_US);
-        checkPeripherals();
-        if (abortTxP) return;
         for (uint16_t i = 0; i < strobeInterval; i++) {
-            checkPeripherals();
-            if (abortTxP) return;
             _delay_ms(1);
+            if (abortTxP) return;
         }
-        checkPeripherals();
         if (abortTxP) return;
 
         for (uint8_t i = 0; i < totalPixels; i++) {
-            send_pixel_4_args(0, 0, 0, 0);
-            checkPeripherals();
+            sendPixel(0, 0, 0, 0);
             if (abortTxP) return;
         }
-        checkPeripherals();
-        if (abortTxP) return;
         _delay_us(LATCH_TIME_US);
-        checkPeripherals();
-        if (abortTxP) return;
         for (uint16_t i = 0; i < strobeInterval; i++) {
-            checkPeripherals();
-            if (abortTxP) return;
             _delay_ms(1);
+            if (abortTxP) return;
         }
-        checkPeripherals();
         if (abortTxP) return;
+
     }
 }
 
@@ -340,7 +322,7 @@ int main() {
     patternList[0] = &warmColorPattern;
     patternList[1] = &warmLightPattern;
     patternList[2] = &warmStrobePattern;
-    patternList[3] = &bisexualStrobePattern;
+    // patternList[3] = &bisexualStrobePattern;
 
     sw.setOnRelease(&addAnotherRow);
     sw.setOnLongPress(&nextPattern);
@@ -370,4 +352,5 @@ int main() {
 
     }
 }
+
 
