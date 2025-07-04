@@ -11,7 +11,6 @@
 
 
 extern "C" {
-    void flip();
     void sendbyte(uint8_t b);
 }
 
