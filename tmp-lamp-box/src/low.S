@@ -2,7 +2,8 @@
 #include "avr/io.h"
 
 ; .section .text
-.global sendbyte
+.global send_byte
+.global send_pixel_4_args
 
 
 ; WS2812 sendbyte routine, 8 MHz ATtiny85
@@ -12,7 +13,7 @@
 ;   Bit 1: HIGH 6 cycles, LOW 4
 
 
-sendbyte:
+send_byte:
     cli
     mov r16, r24
 
@@ -144,4 +145,27 @@ sendbyte:
     sei
     ret
 
+;  TODO  make better? common "end"?
+
+
+send_pixel_4_args:
+    sbi PORTB, 1   ; !!
+    ;  TODO  stress that this is GRBW. re-ordering
+    ; r24 red
+    ; r22 green
+    ; r20 blue
+    ; r18 white
+    mov r16, r24 ; r16 is red
+    mov r17, r22 ; r17 is green
+    mov r24, r17 ; r24 is now green
+    mov r22, r16 ; r22 is now red
+    rcall send_byte ; sending green
+    mov r24, r22
+    rcall send_byte ; sending red
+    mov r24, r20
+    rcall send_byte ; sending blue
+    mov r24, r18
+    rcall send_byte ; sending white
+    cbi PORTB, 1
+    ret
 

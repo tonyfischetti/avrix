@@ -11,7 +11,11 @@
 
 
 extern "C" {
-    void sendbyte(uint8_t b);
+    void send_byte(uint8_t b);
+    void send_pixel_4_args(uint8_t red,
+                           uint8_t green,
+                           uint8_t blue,
+                           uint8_t white);
 }
 
 using NEO = HAL::GPIO::GPIO<5>;
@@ -89,16 +93,16 @@ void sendPixel(uint8_t red,
                uint8_t green,
                uint8_t blue,
                uint8_t warm) {
-    sendbyte(green);
-    sendbyte(red);
-    sendbyte(blue);
-    sendbyte(warm);
+    send_byte(green);
+    send_byte(red);
+    send_byte(blue);
+    send_byte(warm);
 }
 
 
 void clearPixels() {
     for (uint8_t i = 0; i < NUM_PIXELS; i++) {
-        sendPixel(0, 0, 0, 0);
+        send_pixel_4_args(0, 0, 0, 0);
         if (abortTxP) return;
     }
     _delay_us(LATCH_TIME_US);
@@ -136,7 +140,8 @@ void warmLightPattern() {
 
     uint8_t totalPixels { static_cast<uint8_t>(numRows * 8) };
     for (uint8_t i = 0; i < totalPixels; i++) {
-        sendPixel(0, 0, 0, brightness);
+        // sendPixel(0, 0, 0, brightness);
+        send_pixel_4_args(0, 0, 0, brightness);
         if (abortTxP) return;
     }
     _delay_us(LATCH_TIME_US);
@@ -307,7 +312,8 @@ int main() {
 
         CURRENT_PATTERN();
 
-        _delay_us(LATCH_TIME_US);
+        // _delay_us(LATCH_TIME_US);
+
         if (!sw.pendingDebounceTimeout() &&
             !clk.pendingDebounceTimeout()) {
             HAL::Ticker::pause();
