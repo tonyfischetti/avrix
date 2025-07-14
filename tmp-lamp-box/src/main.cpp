@@ -33,7 +33,7 @@ static    uint8_t  brightness     {     0 };
 static    uint16_t strobeInterval {   500 };
 
 using PatternFunction = void (*)();
-constexpr uint8_t         NUM_PATTERNS              { 4 };
+constexpr uint8_t         NUM_PATTERNS              { 6 };
 static    uint8_t         currentPatternIndex       { 0 };
 static    PatternFunction patternList[NUM_PATTERNS] {   };
 
@@ -108,6 +108,32 @@ void sendPixel(uint8_t red,
 void clearPixels() {
     for (uint8_t i = 0; i < NUM_PIXELS; i++) {
         send_pixel_4_args(0, 0, 0, 0);
+        if (abortTxP) return;
+    }
+    _delay_us(LATCH_TIME_US);
+}
+
+
+void testPattern1() {
+    clk.setOnCW(&increaseBrightness);
+    clk.setOnCCW(&decreaseBrightness);
+
+    for (auto i = 0; i < numRows; i++) {
+        send_pixel_4_args(255, 57, 0, 0);
+        if (abortTxP) return;
+        send_pixel_4_args(255, 57, 0, 0);
+        if (abortTxP) return;
+        send_pixel_4_args(255, 57, 0, 0);
+        if (abortTxP) return;
+        send_pixel_4_args(255, 57, 0, 0);
+        if (abortTxP) return;
+        send_pixel_4_args(255, 57, 0, 0);
+        if (abortTxP) return;
+        send_pixel_4_args(255, 57, 0, 0);
+        if (abortTxP) return;
+        send_pixel_4_args(255, 57, 0, 0);
+        if (abortTxP) return;
+        send_pixel_4_args(255, 57, 0, 0);
         if (abortTxP) return;
     }
     _delay_us(LATCH_TIME_US);
@@ -204,8 +230,7 @@ void bisexualStrobePattern() {
     clk.setOnCW(&increaseStrobeInterval);
     clk.setOnCCW(&decreaseStrobeInterval);
 
-    // uint8_t onP { false };
-    while (1) {
+    while (!abortTxP) {
 
         uint8_t totalPixels { static_cast<uint8_t>(numRows * 8) };
 
@@ -321,6 +346,73 @@ void bisexualStrobePattern() {
 
 
 
+void bisexualSwitchPattern() {
+    clk.setOnCW(&increaseStrobeInterval);
+    clk.setOnCCW(&decreaseStrobeInterval);
+
+    while (!abortTxP) {
+
+        uint8_t totalPixels { static_cast<uint8_t>(numRows * 8) };
+
+        checkPeripherals();
+        if (abortTxP) return;
+
+        for (uint8_t i = 0; i < totalPixels; i++) {
+            send_pixel_4_args(255, 0, 121, 0);
+            checkPeripherals();
+            if (abortTxP) return;
+        }
+        _delay_us(LATCH_TIME_US);
+        for (uint16_t i = 0; i < strobeInterval; i++) {
+            checkPeripherals();
+            if (abortTxP) return;
+            _delay_ms(1);
+        }
+        if (abortTxP) return;
+
+
+        for (uint8_t i = 0; i < totalPixels; i++) {
+            send_pixel_4_args(255, 0, 255, 0);
+            checkPeripherals();
+            if (abortTxP) return;
+        }
+        checkPeripherals();
+        if (abortTxP) return;
+        _delay_us(LATCH_TIME_US);
+        checkPeripherals();
+        if (abortTxP) return;
+        for (uint16_t i = 0; i < strobeInterval; i++) {
+            checkPeripherals();
+            if (abortTxP) return;
+            _delay_ms(1);
+        }
+        checkPeripherals();
+        if (abortTxP) return;
+
+
+        for (uint8_t i = 0; i < totalPixels; i++) {
+            send_pixel_4_args(0, 0, 255, 0);
+            checkPeripherals();
+            if (abortTxP) return;
+        }
+        checkPeripherals();
+        if (abortTxP) return;
+        _delay_us(LATCH_TIME_US);
+        checkPeripherals();
+        if (abortTxP) return;
+        for (uint16_t i = 0; i < strobeInterval; i++) {
+            checkPeripherals();
+            if (abortTxP) return;
+            _delay_ms(1);
+        }
+        checkPeripherals();
+        if (abortTxP) return;
+
+    }
+}
+
+
+
 
 int main() {
 
@@ -337,10 +429,12 @@ int main() {
 
     sei();
 
-    patternList[0] = &warmColorPattern;
-    patternList[1] = &warmLightPattern;
-    patternList[2] = &warmStrobePattern;
-    patternList[3] = &bisexualStrobePattern;
+    patternList[0] = &testPattern1;
+    patternList[1] = &warmColorPattern;
+    patternList[2] = &warmLightPattern;
+    patternList[3] = &warmStrobePattern;
+    patternList[4] = &bisexualStrobePattern;
+    patternList[5] = &bisexualSwitchPattern;
 
     sw.setOnRelease(&addAnotherRow);
     sw.setOnLongPress(&nextPattern);
