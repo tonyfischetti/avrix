@@ -7,8 +7,8 @@
 #include "uart.hpp"
 #include "utils/IntTransitionDebouncer.hpp"
 // #include "utils/IntButtonDebouncer.hpp"
-#include "drivers/RotaryEncoder.hpp"
-#include "drivers/Button.hpp"
+#include "devices/RotaryEncoder.hpp"
+#include "devices/Button.hpp"
 
 
 
@@ -41,16 +41,11 @@ using GATE = HAL::GPIO::GPIO<11>;
 // HAL::GPIO::GPIO<14> RAW_BTN;
 
 
-// HAL::Utils::IntTransitionDebouncer<4,  30, HIGH, true> sw;
-// HAL::Utils::IntButtonDebouncer<4, 30, 1000, HIGH, true> sw;
-// HAL::Drivers::Button<4, 30, 1000, HIGH, true> sw;
-// HAL::Drivers::Button<4, 30, 1000, HIGH, true, true> sw;
 
-HAL::Drivers::Button<4, 30, 1000, HIGH, true> sw;
-   // HAL::Drivers::Button<4, 30, 1000, HIGH, true, true, false> sw;
+HAL::Devices::Button<4, 30, 1000, HIGH, true> sw;
 
 // HAL::Utils::IntTransitionDebouncer<5,  1,  HIGH, true> clk;
-HAL::Drivers::RotaryEncoder<5, 6, 1, HIGH, true> clk;
+HAL::Devices::RotaryEncoder<5, 6, 1, HIGH, true> clk;
 HAL::Utils::IntTransitionDebouncer<14, 3,  HIGH, true> btn;
 
 

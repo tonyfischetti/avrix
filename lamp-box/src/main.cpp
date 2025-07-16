@@ -6,7 +6,7 @@
 #include <util/delay.h>
 
 #include "avril.hpp"
-#include "drivers/RotaryEncoderWithButton.hpp"
+#include "devices/RotaryEncoderWithButton.hpp"
 
 
 extern "C" {
@@ -20,7 +20,7 @@ extern "C" {
 using NEO = HAL::GPIO::GPIO<5>;
 using LED = HAL::GPIO::GPIO<6>;
 
-HAL::Drivers::RotaryEncoderWithButton<3, 30, 1000, HIGH, true,
+HAL::Devices::RotaryEncoderWithButton<3, 30, 1000, HIGH, true,
                                       7, 2, 0, HIGH, true> reWithBtn;
 
 constexpr uint8_t  LATCH_TIME_US  {    60 };
