@@ -6,8 +6,7 @@
 #include <util/delay.h>
 
 #include "avril.hpp"
-#include "drivers/Button.hpp"
-#include "drivers/RotaryEncoder.hpp"
+#include "drivers/RotaryEncoderWithButton.hpp"
 
 
 extern "C" {
@@ -20,8 +19,9 @@ extern "C" {
 
 using NEO = HAL::GPIO::GPIO<5>;
 using LED = HAL::GPIO::GPIO<6>;
-HAL::Drivers::Button<3, 30, 1000, HIGH, true>     sw;
-HAL::Drivers::RotaryEncoder<7, 2, 0, HIGH, true> clk;
+
+HAL::Drivers::RotaryEncoderWithButton<3, 30, 1000, HIGH, true,
+                                      7, 2, 0, HIGH, true> reWithBtn;
 
 constexpr uint8_t  LATCH_TIME_US  {    60 };
 constexpr uint8_t  NUM_PIXELS     {    32 };
@@ -29,12 +29,12 @@ constexpr uint8_t  TOTAL_ROWS     {     5 }; // 0 counts
 volatile  uint8_t  previousPINB	  {  0xFF };
 volatile  uint8_t  abortTxP	      { false };
 static    uint8_t  numRows        {     1 };
-static    uint8_t  brightness     {     0 };
+static    uint8_t  brightness     {     5 };
 static    uint16_t strobeInterval {   500 };
 
 using PatternFunction = void (*)();
 constexpr uint8_t         NUM_PATTERNS              { 6 };
-static    uint8_t         currentPatternIndex       { 0 };
+static    uint8_t         currentPatternIndex       { 1 };
 static    PatternFunction patternList[NUM_PATTERNS] {   };
 
 #define CURRENT_PATTERN patternList[currentPatternIndex]
@@ -43,6 +43,16 @@ static    PatternFunction patternList[NUM_PATTERNS] {   };
 
 void nextPattern() {
     currentPatternIndex = (currentPatternIndex + 1) % NUM_PATTERNS;
+    abortTxP = true;
+}
+
+void previousPattern() {
+    if (currentPatternIndex == 0) {
+        currentPatternIndex = NUM_PATTERNS - 1;
+    }
+    else {
+        currentPatternIndex--;
+    }
     abortTxP = true;
 }
 
@@ -84,14 +94,12 @@ ISR(PCINT0_vect) {
     uint8_t changed = current ^ previousPINB;
     previousPINB = current;
 
-    sw.notifyInterruptOccurred(now, changed);
-    clk.notifyInterruptOccurred(now, changed);
+    reWithBtn.notifyInterruptOccurred(now, changed);
 }
 
 
 void checkPeripherals() {
-    sw.process();
-    clk.process();
+    reWithBtn.process();
 }
 
 void sendPixel(uint8_t red,
@@ -115,8 +123,8 @@ void clearPixels() {
 
 
 void testPattern1() {
-    clk.setOnCW(&increaseBrightness);
-    clk.setOnCCW(&decreaseBrightness);
+    reWithBtn.setOnCW(&increaseBrightness);
+    reWithBtn.setOnCCW(&decreaseBrightness);
 
     for (auto i = 0; i < numRows; i++) {
         send_pixel_4_args(255, 57, 0, 0);
@@ -141,33 +149,40 @@ void testPattern1() {
 
 
 void warmColorPattern() {
-    clk.setOnCW(&increaseBrightness);
-    clk.setOnCCW(&decreaseBrightness);
+    reWithBtn.setOnCW(&increaseBrightness);
+    reWithBtn.setOnCCW(&decreaseBrightness);
+
+    uint8_t greenChannel = (brightness >> 4) +
+                           (brightness >> 4) +
+                           (brightness >> 4) +
+                           (brightness >> 6) +
+                           (brightness >> 5);
 
     for (auto i = 0; i < numRows; i++) {
-        send_pixel_4_args(brightness, brightness >> 2, 1, 0);
+        // send_pixel_4_args(brightness, brightness >> 2, 0, 0);
+        send_pixel_4_args(brightness, greenChannel, 0, 0);
         if (abortTxP) return;
-        send_pixel_4_args(brightness, brightness >> 2, 1, 0);
+        send_pixel_4_args(brightness, greenChannel, 0, 0);
         if (abortTxP) return;
-        send_pixel_4_args(brightness, brightness >> 3, 2, 0);
+        send_pixel_4_args(brightness, greenChannel, 0, 0);
         if (abortTxP) return;
-        send_pixel_4_args(brightness, brightness >> 5, 2, 0);
+        send_pixel_4_args(brightness, greenChannel, 0, 0);
         if (abortTxP) return;
-        send_pixel_4_args(brightness, brightness >> 5, 2, 0);
+        send_pixel_4_args(brightness, greenChannel, 0, 0);
         if (abortTxP) return;
-        send_pixel_4_args(brightness, brightness >> 3, 2, 0);
+        send_pixel_4_args(brightness, greenChannel, 0, 0);
         if (abortTxP) return;
-        send_pixel_4_args(brightness, brightness >> 2, 1, 0);
+        send_pixel_4_args(brightness, greenChannel, 0, 0);
         if (abortTxP) return;
-        send_pixel_4_args(brightness, brightness >> 2, 1, 0);
+        send_pixel_4_args(brightness, greenChannel, 0, 0);
         if (abortTxP) return;
     }
     _delay_us(LATCH_TIME_US);
 }
 
 void warmLightPattern() {
-    clk.setOnCW(&increaseBrightness);
-    clk.setOnCCW(&decreaseBrightness);
+    reWithBtn.setOnCW(&increaseBrightness);
+    reWithBtn.setOnCCW(&decreaseBrightness);
 
     uint8_t totalPixels { static_cast<uint8_t>(numRows * 8) };
     for (uint8_t i = 0; i < totalPixels; i++) {
@@ -178,8 +193,8 @@ void warmLightPattern() {
 }
 
 void warmStrobePattern() {
-    clk.setOnCW(&increaseStrobeInterval);
-    clk.setOnCCW(&decreaseStrobeInterval);
+    reWithBtn.setOnCW(&increaseStrobeInterval);
+    reWithBtn.setOnCCW(&decreaseStrobeInterval);
 
     // uint8_t onP { false };
     while (!abortTxP) {
@@ -227,8 +242,8 @@ void warmStrobePattern() {
 
 
 void bisexualStrobePattern() {
-    clk.setOnCW(&increaseStrobeInterval);
-    clk.setOnCCW(&decreaseStrobeInterval);
+    reWithBtn.setOnCW(&increaseStrobeInterval);
+    reWithBtn.setOnCCW(&decreaseStrobeInterval);
 
     while (!abortTxP) {
 
@@ -347,8 +362,8 @@ void bisexualStrobePattern() {
 
 
 void bisexualSwitchPattern() {
-    clk.setOnCW(&increaseStrobeInterval);
-    clk.setOnCCW(&decreaseStrobeInterval);
+    reWithBtn.setOnCW(&increaseStrobeInterval);
+    reWithBtn.setOnCCW(&decreaseStrobeInterval);
 
     while (!abortTxP) {
 
@@ -424,8 +439,7 @@ int main() {
 
     HAL::Ticker::setupMSTimer();
 
-    sw.begin();
-    clk.begin();
+    reWithBtn.begin();
 
     sei();
 
@@ -436,8 +450,10 @@ int main() {
     patternList[4] = &bisexualStrobePattern;
     patternList[5] = &bisexualSwitchPattern;
 
-    sw.setOnRelease(&addAnotherRow);
-    sw.setOnLongPress(&nextPattern);
+    reWithBtn.setOnRelease(&addAnotherRow);
+    reWithBtn.setOnLongPress(&nextPattern);
+    reWithBtn.setOnPressedCW(&nextPattern);
+    reWithBtn.setOnPressedCCW(&previousPattern);
     // clk.setOnCW(&increaseBrightness);
     // clk.setOnCCW(&decreaseBrightness);
 
@@ -455,8 +471,7 @@ int main() {
 
         CURRENT_PATTERN();
 
-        if (!sw.pendingDebounceTimeout() &&
-            !clk.pendingDebounceTimeout() &&
+        if (!reWithBtn.pendingDebounceTimeout() &&
             !abortTxP) {
             HAL::Ticker::pause();
             HAL::Sleep::goToSleep(SLEEP_MODE_PWR_DOWN);
