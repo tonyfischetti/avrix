@@ -40,7 +40,7 @@ CXXFLAGS   += -Wuninitialized # -Wswitch-enum -Wswitch
 LDFLAGS    := -Wl,--gc-sections -flto
 
 
-all: $(BUILD_DIR)/low.o $(BUILD_DIR)/$(TARGET).elf $(BUILD_DIR)/$(TARGET)-disasm.txt $(BUILD_DIR)/$(TARGET).hex
+all: $(BUILD_DIR)/neopixel-asm.o $(BUILD_DIR)/$(TARGET).elf $(BUILD_DIR)/$(TARGET)-disasm.txt $(BUILD_DIR)/$(TARGET).hex
 
 debug:
 	echo $(SRC)
@@ -50,7 +50,7 @@ debug:
 $(BUILD_DIR)/$(TARGET)-disasm.txt: $(BUILD_DIR)/$(TARGET).elf
 	$(OBJDUMP) -d $^ > $@
 
-$(BUILD_DIR)/%.elf: $(SRC) $(BUILD_DIR)/low.o
+$(BUILD_DIR)/%.elf: $(SRC) $(BUILD_DIR)/neopixel-asm.o
 	@mkdir -p $(BUILD_DIR)
 	$(CXX) $(CXXFLAGS) $(LDFLAGS) $^ -o $@
 	$(SIZE) -G --mcu=$(MCU) $@
@@ -58,7 +58,7 @@ $(BUILD_DIR)/%.elf: $(SRC) $(BUILD_DIR)/low.o
 $(BUILD_DIR)/%.hex: $(BUILD_DIR)/%.elf
 	$(OBJCOPY) -O ihex -R .eeprom $< $@
 
-$(BUILD_DIR)/low.o: src/low.S
+$(BUILD_DIR)/neopixel-asm.o: src/neopixel-asm.S
 	@mkdir -p $(BUILD_DIR)
 	$(CC) $(CFLAGS) -Os -c $< -o $@
 
