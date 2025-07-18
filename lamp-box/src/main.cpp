@@ -21,10 +21,25 @@ constexpr uint8_t  NUM_PIXELS     { TOTAL_ROWS * 8 };
 volatile  uint8_t  previousPINB	  {           0xFF };
 volatile  uint8_t  abortTxP	      {          false };
 
-//  TODO  use sizeof, instead
-constexpr uint8_t  NUM_PATTERNS              { 6 };
+static WarmColorPattern     <TOTAL_ROWS> warmColorPattern      {};
+static WarmLightPattern     <TOTAL_ROWS> warmLightPattern      {};
+static BisexualSwitchPattern<TOTAL_ROWS> bisexualSwitchPattern {};
+static WarmStrobePattern    <TOTAL_ROWS> warmStrobePattern     {};
+static SpectrumPattern      <TOTAL_ROWS> spectrumPattern       {};
+static ChooseAColorPattern  <TOTAL_ROWS> chooseAColorPattern   {};
+
+static Pattern* patternList[] = {
+    &warmColorPattern,
+    &spectrumPattern,
+    &chooseAColorPattern,
+    &warmLightPattern,
+    &bisexualSwitchPattern,
+    &warmStrobePattern
+};
+
+constexpr uint8_t NUM_PATTERNS = sizeof(patternList) / sizeof(patternList[0]);
+
 static    uint8_t  currentPatternIndex       { 0 };
-static    Pattern* patternList[NUM_PATTERNS] {   };
 
 #define CURRENT_PATTERN patternList[currentPatternIndex]
 
@@ -72,20 +87,6 @@ int main() {
     reWithBtn.begin();
 
     sei();
-
-    WarmColorPattern     <TOTAL_ROWS> warmColorPattern      {};
-    WarmLightPattern     <TOTAL_ROWS> warmLightPattern      {};
-    BisexualSwitchPattern<TOTAL_ROWS> bisexualSwitchPattern {};
-    WarmStrobePattern    <TOTAL_ROWS> warmStrobePattern     {};
-    SpectrumPattern      <TOTAL_ROWS> spectrumPattern       {};
-    ChooseAColorPattern  <TOTAL_ROWS> chooseAColorPattern   {};
-
-    patternList[0] = &warmColorPattern;
-    patternList[1] = &spectrumPattern;
-    patternList[2] = &chooseAColorPattern;
-    patternList[3] = &warmLightPattern;
-    patternList[4] = &bisexualSwitchPattern;
-    patternList[5] = &warmStrobePattern;
 
     reWithBtn.setOnLongPress(&nextPattern); //  TODO  ???
     reWithBtn.setOnPressedCW(&nextPattern);
