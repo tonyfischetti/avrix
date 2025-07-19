@@ -22,6 +22,8 @@ volatile  uint8_t  previousPINB	  {           0xFF };
 volatile  uint8_t  abortTxP	      {          false };
 
 static WarmColorPattern     <TOTAL_ROWS> warmColorPattern      {};
+static WarmColorPattern2    <TOTAL_ROWS> warmColorPattern2     {};
+static WarmColorPattern3    <TOTAL_ROWS> warmColorPattern3     {};
 static WarmLightPattern     <TOTAL_ROWS> warmLightPattern      {};
 static BisexualSwitchPattern<TOTAL_ROWS> bisexualSwitchPattern {};
 static WarmStrobePattern    <TOTAL_ROWS> warmStrobePattern     {};
@@ -30,6 +32,8 @@ static ChooseAColorPattern  <TOTAL_ROWS> chooseAColorPattern   {};
 
 static Pattern* patternList[] = {
     &warmColorPattern,
+    &warmColorPattern2,
+    &warmColorPattern3,
     &spectrumPattern,
     &chooseAColorPattern,
     &warmLightPattern,
@@ -53,9 +57,10 @@ ISR(PCINT0_vect) {
     previousPINB = current;
 
     reWithBtn.notifyInterruptOccurred(now, changed);
+    reWithBtn.process();
 }
 
-void checkPeripherals() {
+inline void checkPeripherals() {
     reWithBtn.process();
 }
 
