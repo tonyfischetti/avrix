@@ -24,6 +24,7 @@ volatile  uint8_t  abortTxP	      {          false };
 static WarmColorPattern     <TOTAL_ROWS> warmColorPattern      {};
 static WarmColorPattern2    <TOTAL_ROWS> warmColorPattern2     {};
 static WarmColorPattern3    <TOTAL_ROWS> warmColorPattern3     {};
+static CoolWhiteColorPattern<TOTAL_ROWS> coolWhiteColorPattern {};
 static WarmLightPattern     <TOTAL_ROWS> warmLightPattern      {};
 static BisexualSwitchPattern<TOTAL_ROWS> bisexualSwitchPattern {};
 static WarmStrobePattern    <TOTAL_ROWS> warmStrobePattern     {};
@@ -34,9 +35,10 @@ static Pattern* patternList[] = {
     &warmColorPattern,
     &warmColorPattern2,
     &warmColorPattern3,
+    &warmLightPattern,
+    &coolWhiteColorPattern,
     &spectrumPattern,
     &chooseAColorPattern,
-    &warmLightPattern,
     &bisexualSwitchPattern,
     &warmStrobePattern
 };
