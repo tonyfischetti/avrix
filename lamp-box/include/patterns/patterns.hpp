@@ -2,6 +2,7 @@
 
 #include "WarmColorPattern.hpp"
 #include "WarmColorPattern2.hpp"
+#include "CandlePattern.hpp"
 #include "WarmColorPattern3.hpp"
 #include "CoolWhiteColorPattern.hpp"
 #include "WarmLightPattern.hpp"

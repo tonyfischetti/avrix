@@ -23,6 +23,7 @@ volatile  uint8_t  abortTxP	      {          false };
 
 static WarmColorPattern     <TOTAL_ROWS> warmColorPattern      {};
 static WarmColorPattern2    <TOTAL_ROWS> warmColorPattern2     {};
+static CandlePattern        <TOTAL_ROWS> candlePattern         {};
 static WarmColorPattern3    <TOTAL_ROWS> warmColorPattern3     {};
 static CoolWhiteColorPattern<TOTAL_ROWS> coolWhiteColorPattern {};
 static WarmLightPattern     <TOTAL_ROWS> warmLightPattern      {};
@@ -34,6 +35,7 @@ static ChooseAColorPattern  <TOTAL_ROWS> chooseAColorPattern   {};
 static Pattern* patternList[] = {
     &warmColorPattern,
     &warmColorPattern2,
+    &candlePattern,
     &warmColorPattern3,
     &warmLightPattern,
     &coolWhiteColorPattern,
@@ -45,7 +47,7 @@ static Pattern* patternList[] = {
 
 constexpr uint8_t NUM_PATTERNS = sizeof(patternList) / sizeof(patternList[0]);
 
-static    uint8_t  currentPatternIndex       { 0 };
+static    uint8_t  currentPatternIndex       { 2 };
 
 #define CURRENT_PATTERN patternList[currentPatternIndex]
 
@@ -99,8 +101,8 @@ int main() {
     reWithBtn.setOnPressedCW(&nextPattern);
     reWithBtn.setOnPressedCCW(&previousPattern);
 
-    reWithBtn.setOnCW([]()      { CURRENT_PATTERN->onCW(); });
-    reWithBtn.setOnCCW([]()     { CURRENT_PATTERN->onCCW(); });
+    reWithBtn.setOnCW([]()      { CURRENT_PATTERN->onCW();      });
+    reWithBtn.setOnCCW([]()     { CURRENT_PATTERN->onCCW();     });
     reWithBtn.setOnRelease([]() { CURRENT_PATTERN->onRelease(); });
 
 

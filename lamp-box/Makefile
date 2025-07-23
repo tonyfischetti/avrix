@@ -21,12 +21,13 @@ PROGRAMMER := usbtiny
 SRC        := $(wildcard $(SRC_DIR)/*.cpp)
 SRC        += $(wildcard $(HAL_LOC)/src/*.cpp)
 SRC        += $(wildcard $(HAL_LOC)/src/**/*.cpp)
-# SRC        += $(wildcard $(HAL_LOC)/src/**/*.S)
+SRC        += $(wildcard $(HAL_LOC)/src/**/*.S)
 
 CFLAGS 		:= -mmcu=$(MCU) -DF_CPU=$(F_CPU)
 
 CXXFLAGS   := -mmcu=$(MCU) -DF_CPU=$(F_CPU)
 CXXFLAGS   += -I$(INC_DIR) -I$(HAL_LOC)/include
+CXXFLAGS   += -I$(HAL_LOC)/include/utils
 CXXFLAGS   += -Os -Wall -std=gnu++2a -flto -ffunction-sections
 CXXFLAGS   += -fdata-sections -Wextra -Wpedantic -Wshadow
 CXXFLAGS   +=  # -Wconversion # -Werror
