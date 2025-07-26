@@ -6,12 +6,23 @@
 #include "Pattern.hpp"
 #include "utils/LFSR.hpp"
 
-
-template<uint8_t TOTAL_ROWS>
 struct CandlePattern final : Pattern {
 
-    CandlePattern() {
+    CandlePattern(uint8_t _numPixels, uint8_t* _pixelArray)
+      : numPixels    {  _numPixels },
+        pixelArray   { _pixelArray } {
         HAL::Utils::Random::LFSR::init(93);
+    }
+
+    //  TODO  implement this is assembly
+    //        include a LIMIT and OFFSET
+    inline void sendArray() {
+        for (uint8_t i = 0; i < numPixels; i += 4) {
+            send_pixel(pixelArray[i],
+                       pixelArray[i+1],
+                       pixelArray[i+2],
+                       pixelArray[i+3]);
+        }
     }
     
     inline void on() {
@@ -24,25 +35,38 @@ struct CandlePattern final : Pattern {
     uint16_t tick() override {
         uint8_t currentRand { static_cast<uint8_t>(HAL::Utils::Random::LFSR::nextByte()) };
 
-        flood_pixels(0, 0, 0, 0, 10);
+        if (currentRand < 100) {
+            for (uint8_t i = 0; i < numPixels; i += 4) {
+                currentRand = static_cast<uint8_t>(HAL::Utils::Random::LFSR::nextByte());
 
-        if ((currentRand & (0x03) << 0))  on();
-        else                             off();
-        send_pixel(redChannel, greenChannel, blueChannel, 0);
-        send_pixel(redChannel, greenChannel, blueChannel, 0);
-        if ((currentRand & (0x03) << 4) ||
-           !(currentRand & (0x0f)))       on();
-        else                             off();
-        flood_pixels(0, 0, 0, 0, 4);
+                if (currentRand < 140) {
+                    pixelArray[i]   = redChannel;
+                    pixelArray[i+1] = greenChannel;
+                    pixelArray[i+2] = blueChannel;
+                    pixelArray[i+3] = 0;
+                }
+                else if (currentRand < 220) {
+                    pixelArray[i]   = 30;
+                    pixelArray[i+1] = 8;
+                    pixelArray[i+2] = 0;
+                    pixelArray[i+3] = 0;
+                }
+                else if (currentRand < 240) {
+                    pixelArray[i]   = 30;
+                    pixelArray[i+1] = 6;
+                    pixelArray[i+2] = 0;
+                    pixelArray[i+3] = 0;
+                }
+                else {
+                    pixelArray[i]   = 0;
+                    pixelArray[i+1] = 0;
+                    pixelArray[i+2] = 0;
+                    pixelArray[i+3] = 0;
+                }
+            }
+        }
 
-
-        send_pixel(redChannel, greenChannel, blueChannel, 0);
-
-        if ((currentRand & (0x03) << 2))  on();
-        else                             off();
-
-        send_pixel(redChannel, greenChannel, blueChannel, 0);
-        send_pixel(redChannel, greenChannel, blueChannel, 0);
+        sendArray();
 
         return interval;
     }
@@ -55,15 +79,14 @@ struct CandlePattern final : Pattern {
         interval -= 2;
     }
 
-    void onRelease() override {
-        numRows = (numRows + 1) % TOTAL_ROWS;
-    }
-
   private:
-    uint8_t numRows            {    1 };
-    uint16_t interval          {  200 };
-    const uint8_t redChannel   {   30 };
-    const uint8_t greenChannel {   10 };
-    const uint8_t blueChannel  {    1 };
+    uint16_t interval           {   50 };
+    const uint8_t  redChannel   {   30 };
+    const uint8_t  greenChannel {   10 };
+    const uint8_t  blueChannel  {    1 };
+    const uint8_t  numPixels    {      };
+          uint8_t* pixelArray   {      };
 
 };
+
+

@@ -16,14 +16,16 @@ using LED = HAL::GPIO::GPIO<6>;
 HAL::Devices::RotaryEncoderWithButton<3, 30, 1000, HIGH, true,
                                       7, 2, 0, HIGH, true> reWithBtn;
 
-constexpr uint8_t  TOTAL_ROWS     {              5 }; // 0 counts
-constexpr uint8_t  NUM_PIXELS     { TOTAL_ROWS * 8 };
-volatile  uint8_t  previousPINB	  {           0xFF };
-volatile  uint8_t  abortTxP	      {          false };
+constexpr uint8_t TOTAL_ROWS                {                  5 }; // 0 counts
+constexpr uint8_t NUM_PIXELS                { (TOTAL_ROWS-1) * 8 };
+constexpr uint8_t NUM_CHANNELS              {     NUM_PIXELS * 4 };
+volatile  uint8_t previousPINB              {               0xFF };
+volatile  uint8_t abortTxP 	                {              false };
+static    uint8_t pixelArray [NUM_CHANNELS] {                    };
 
 static WarmColorPattern     <TOTAL_ROWS> warmColorPattern      {};
 static WarmColorPattern2    <TOTAL_ROWS> warmColorPattern2     {};
-static CandlePattern        <TOTAL_ROWS> candlePattern         {};
+static CandlePattern                     candlePattern         { NUM_CHANNELS, pixelArray };
 static WarmColorPattern3    <TOTAL_ROWS> warmColorPattern3     {};
 static CoolWhiteColorPattern<TOTAL_ROWS> coolWhiteColorPattern {};
 static WarmLightPattern     <TOTAL_ROWS> warmLightPattern      {};

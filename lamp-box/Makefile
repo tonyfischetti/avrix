@@ -40,7 +40,6 @@ CXXFLAGS   += -Wuninitialized # -Wswitch-enum -Wswitch
 
 LDFLAGS    := -Wl,--gc-sections -flto
 
-
 all: $(BUILD_DIR)/neopixel-asm.o $(BUILD_DIR)/$(TARGET).elf $(BUILD_DIR)/$(TARGET)-disasm.txt $(BUILD_DIR)/$(TARGET).hex
 
 debug:
