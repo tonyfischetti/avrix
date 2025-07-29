@@ -23,9 +23,9 @@ volatile  uint8_t previousPINB              {               0xFF };
 volatile  uint8_t abortTxP 	                {              false };
 static    uint8_t pixelArray [NUM_CHANNELS] {                    };
 
+static CandlePattern                     candlePattern         { NUM_CHANNELS, pixelArray };
 static WarmColorPattern     <TOTAL_ROWS> warmColorPattern      {};
 static WarmColorPattern2    <TOTAL_ROWS> warmColorPattern2     {};
-static CandlePattern                     candlePattern         { NUM_CHANNELS, pixelArray };
 static WarmColorPattern3    <TOTAL_ROWS> warmColorPattern3     {};
 static CoolWhiteColorPattern<TOTAL_ROWS> coolWhiteColorPattern {};
 static WarmLightPattern     <TOTAL_ROWS> warmLightPattern      {};
@@ -35,9 +35,9 @@ static SpectrumPattern      <TOTAL_ROWS> spectrumPattern       {};
 static ChooseAColorPattern  <TOTAL_ROWS> chooseAColorPattern   {};
 
 static Pattern* patternList[] = {
+    &candlePattern,
     &warmColorPattern,
     &warmColorPattern2,
-    &candlePattern,
     &warmColorPattern3,
     &warmLightPattern,
     &coolWhiteColorPattern,
@@ -48,8 +48,7 @@ static Pattern* patternList[] = {
 };
 
 constexpr uint8_t NUM_PATTERNS = sizeof(patternList) / sizeof(patternList[0]);
-
-static    uint8_t  currentPatternIndex       { 2 };
+static    uint8_t  currentPatternIndex       { 0 };
 
 #define CURRENT_PATTERN patternList[currentPatternIndex]
 
