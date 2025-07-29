@@ -24,23 +24,23 @@ volatile  uint8_t abortTxP 	                {              false };
 static    uint8_t pixelArray [NUM_CHANNELS] {                    };
 
 static CandlePattern                     candlePattern         { NUM_CHANNELS, pixelArray };
-static WarmColorPattern     <TOTAL_ROWS> warmColorPattern      {};
+static WarmLightPattern     <TOTAL_ROWS> warmLightPattern      {};
 static WarmColorPattern2    <TOTAL_ROWS> warmColorPattern2     {};
 static WarmColorPattern3    <TOTAL_ROWS> warmColorPattern3     {};
-static CoolWhiteColorPattern<TOTAL_ROWS> coolWhiteColorPattern {};
-static WarmLightPattern     <TOTAL_ROWS> warmLightPattern      {};
 static BisexualSwitchPattern<TOTAL_ROWS> bisexualSwitchPattern {};
 static WarmStrobePattern    <TOTAL_ROWS> warmStrobePattern     {};
 static SpectrumPattern      <TOTAL_ROWS> spectrumPattern       {};
 static ChooseAColorPattern  <TOTAL_ROWS> chooseAColorPattern   {};
+// static WarmColorPattern     <TOTAL_ROWS> warmColorPattern      {};
+// static CoolWhiteColorPattern<TOTAL_ROWS> coolWhiteColorPattern {};
 
 static Pattern* patternList[] = {
     &candlePattern,
-    &warmColorPattern,
+    &warmLightPattern,
+    // &warmColorPattern,
     &warmColorPattern2,
     &warmColorPattern3,
-    &warmLightPattern,
-    &coolWhiteColorPattern,
+    // &coolWhiteColorPattern,
     &spectrumPattern,
     &chooseAColorPattern,
     &bisexualSwitchPattern,

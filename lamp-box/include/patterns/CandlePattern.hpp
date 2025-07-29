@@ -35,51 +35,49 @@ struct CandlePattern final : Pattern {
     uint16_t tick() override {
         uint8_t currentRand { static_cast<uint8_t>(HAL::Utils::Random::LFSR::nextByte()) };
 
-        if (currentRand < 75) {
-            for (uint8_t i = 0; i < numPixels; i += 4) {
-                currentRand = static_cast<uint8_t>(HAL::Utils::Random::LFSR::nextByte());
+        for (uint8_t i = 0; i < numPixels; i += 4) {
+            currentRand = static_cast<uint8_t>(HAL::Utils::Random::LFSR::nextByte());
 
-                // 0 - 140 - 55%
-                if (currentRand < 140) {
-                    pixelArray[i]   = redChannel;
-                    pixelArray[i+1] = greenChannel;
-                    pixelArray[i+2] = blueChannel;
-                    pixelArray[i+3] = 0;
-                }
-                // 140 - 210 - 27%
-                else if (currentRand < 210) {
-                    pixelArray[i]   = 30;
-                    pixelArray[i+1] = 9;
-                    pixelArray[i+2] = 0;
-                    pixelArray[i+3] = 0;
-                }
-                // 210 - 240 - 12%
-                else if (currentRand < 240) {
-                    pixelArray[i]   = 30;
-                    pixelArray[i+1] = 8;
-                    pixelArray[i+2] = 0;
-                    pixelArray[i+3] = 0;
-                }
-                // 255-240 - 6%
-                else {
-                    pixelArray[i]   = 0;
-                    pixelArray[i+1] = 0;
-                    pixelArray[i+2] = 0;
-                    pixelArray[i+3] = 0;
-                }
+            // 0 - 140 - 55%
+            if (currentRand < 140) {
+                pixelArray[i]   = redChannel;
+                pixelArray[i+1] = greenChannel;
+                pixelArray[i+2] = blueChannel;
+                pixelArray[i+3] = 0;
             }
+            // 140 - 210 - 27%
+            else if (currentRand < 210) {
+                pixelArray[i]   = 30;
+                pixelArray[i+1] = 9;
+                pixelArray[i+2] = 0;
+                pixelArray[i+3] = 0;
+            }
+            // 210 - 240 - 12%
+            else if (currentRand < 240) {
+                pixelArray[i]   = 30;
+                pixelArray[i+1] = 8;
+                pixelArray[i+2] = 0;
+                pixelArray[i+3] = 0;
+            }
+            // 255-240 - 6%
+            else {
+                pixelArray[i]   = 0;
+                pixelArray[i+1] = 0;
+                pixelArray[i+2] = 0;
+                pixelArray[i+3] = 0;
+            }
+        }
 
-            if (currentRand % 5 == 0) {
-                uint8_t start { 116 };
-                if      (currentRand > 191) { start =   0; }
-                else if (currentRand > 127) { start =  20; }
-                else if (currentRand > 63)  { start =  96; }
-                for (uint8_t i = start; i < start+12; i+=4) {
-                    pixelArray[i]   = 0;
-                    pixelArray[i+1] = 0;
-                    pixelArray[i+2] = 0;
-                    pixelArray[i+3] = 0;
-                }
+        if (currentRand % 3 == 0) {
+            uint8_t start { 112 };
+            if      (currentRand > 191) { start =   0; }
+            else if (currentRand > 127) { start =  16; }
+            else if (currentRand > 63)  { start =  96; }
+            for (uint8_t i = start; i < start+16; i+=4) {
+                pixelArray[i]   = 0;
+                pixelArray[i+1] = 0;
+                pixelArray[i+2] = 0;
+                pixelArray[i+3] = 0;
             }
         }
 
@@ -90,6 +88,8 @@ struct CandlePattern final : Pattern {
         if (jumpingSeed == 0) jumpingSeed++;
         HAL::Utils::Random::LFSR::init(jumpingSeed);
 
+        if (currentRand < 50)
+            return interval*5;
         return interval;
     }
 
