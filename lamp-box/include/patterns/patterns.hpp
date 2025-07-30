@@ -10,3 +10,4 @@
 #include "WarmStrobePattern.hpp"
 #include "SpectrumPattern.hpp"
 #include "ChooseAColorPattern.hpp"
+#include "NCC_1701Pattern.hpp"

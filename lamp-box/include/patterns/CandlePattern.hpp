@@ -25,13 +25,6 @@ struct CandlePattern final : Pattern {
         }
     }
     
-    inline void on() {
-        send_pixel(redChannel, greenChannel, blueChannel, 0);
-    }
-    inline void off() {
-        send_pixel(0, 0, 0, 0);
-    }
-
     uint16_t tick() override {
         uint8_t currentRand { static_cast<uint8_t>(HAL::Utils::Random::LFSR::nextByte()) };
 
@@ -68,12 +61,15 @@ struct CandlePattern final : Pattern {
             }
         }
 
-        if (currentRand % 3 == 0) {
-            uint8_t start { 112 };
+        if (currentRand % 5 == 0) {
+            uint8_t start { 116 };
+            // uint8_t start { 112 };
             if      (currentRand > 191) { start =   0; }
-            else if (currentRand > 127) { start =  16; }
+            // else if (currentRand > 127) { start =  16; }
+            else if (currentRand > 127) { start =  20; }
             else if (currentRand > 63)  { start =  96; }
-            for (uint8_t i = start; i < start+16; i+=4) {
+            for (uint8_t i = start; i < start+12; i+=4) {
+            // for (uint8_t i = start; i < start+16; i+=4) {
                 pixelArray[i]   = 0;
                 pixelArray[i+1] = 0;
                 pixelArray[i+2] = 0;

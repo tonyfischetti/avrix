@@ -23,6 +23,7 @@ volatile  uint8_t previousPINB              {               0xFF };
 volatile  uint8_t abortTxP 	                {              false };
 static    uint8_t pixelArray [NUM_CHANNELS] {                    };
 
+static NCC_1701Pattern                   ncc1701Pattern        { pixelArray };
 static CandlePattern                     candlePattern         { NUM_CHANNELS, pixelArray };
 static WarmLightPattern     <TOTAL_ROWS> warmLightPattern      {};
 static WarmColorPattern2    <TOTAL_ROWS> warmColorPattern2     {};
@@ -35,6 +36,7 @@ static ChooseAColorPattern  <TOTAL_ROWS> chooseAColorPattern   {};
 // static CoolWhiteColorPattern<TOTAL_ROWS> coolWhiteColorPattern {};
 
 static Pattern* patternList[] = {
+    &ncc1701Pattern,
     &candlePattern,
     &warmLightPattern,
     // &warmColorPattern,
