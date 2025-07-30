@@ -23,9 +23,12 @@ SRC        += $(wildcard $(HAL_LOC)/src/*.cpp)
 SRC        += $(wildcard $(HAL_LOC)/src/**/*.cpp)
 SRC        += $(wildcard $(HAL_LOC)/src/**/*.S)
 
-CFLAGS 		:= -mmcu=$(MCU) -DF_CPU=$(F_CPU)
+CFLAGS 	   := -mmcu=$(MCU) -DF_CPU=$(F_CPU)
+CFLAGS 	   += -DPIXEL_ORDER_GRBW
+CFLAGS 	   += -DNEO_PORT=PORTB -DNEO_BIT=0
+# CFLAGS 	   += -DPIXEL_ORDER_RGBW
 
-CXXFLAGS   := -mmcu=$(MCU) -DF_CPU=$(F_CPU)
+CXXFLAGS   := $(CFLAGS)
 CXXFLAGS   += -I$(INC_DIR) -I$(HAL_LOC)/include
 CXXFLAGS   += -I$(HAL_LOC)/include/utils
 CXXFLAGS   += -Os -Wall -std=gnu++2a -flto -ffunction-sections

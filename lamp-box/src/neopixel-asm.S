@@ -1,6 +1,20 @@
 #define __SFR_OFFSET 0x00
 #include "avr/io.h"
 
+
+; #ifndef NEO_PORT
+; #define NEO_PORT PORTB
+; #endif
+
+#ifndef NEO_PORT
+.error "Must define NEO_PORT (the port that the neopixels are connected to"
+#endif
+
+#ifndef NEO_BIT
+.error "Must define NEO_BIT (the but on NEO_PORT that corresponds to the pin that the neopixels are connected to"
+#endif
+
+
 ; .section .text
 .global send_byte
 .global send_pixel
@@ -14,6 +28,31 @@
 ;   Bit 1: HIGH 6 cycles, LOW 4
 
 
+
+; --------------------------------------------------------------------------
+; Macros
+; --------------------------------------------------------------------------
+.macro  SEND reg
+    ; .ifc    \reg,"r24" ; don't bother moving r24 to r24
+    ;     rcall send_byte
+    ; .else
+        mov   r24, \reg
+        rcall send_byte
+    ; .endif
+.endm
+
+.macro  NEO_HIGH
+    sbi NEO_PORT, NEO_BIT
+.endm
+
+.macro  NEO_LOW
+    cbi NEO_PORT, NEO_BIT
+.endm
+
+
+; ---------------------------------------------------------------------------
+; void send_byte(uint8_t b);
+; ---------------------------------------------------------------------------
 send_byte:
     cli
     mov r16, r24
@@ -21,9 +60,9 @@ send_byte:
 ; ------- Bit 7 -------
 .bit7:
     lsl r16
-    sbi PORTB, 0
+    NEO_HIGH
     brcs .bit7_1
-    cbi PORTB, 0
+    NEO_LOW
     nop
     nop
     rjmp .bit6
@@ -31,15 +70,15 @@ send_byte:
 .bit7_1:
     nop
     nop
-    cbi PORTB, 0
+    NEO_LOW
     nop
 
 ; ------- Bit 6 -------
 .bit6:
     lsl r16
-    sbi PORTB, 0
+    NEO_HIGH
     brcs .bit6_1
-    cbi PORTB, 0
+    NEO_LOW
     nop
     nop
     rjmp .bit5
@@ -47,15 +86,15 @@ send_byte:
 .bit6_1:
     nop
     nop
-    cbi PORTB, 0
+    NEO_LOW
     nop
 
 ; ------- Bit 5 -------
 .bit5:
     lsl r16
-    sbi PORTB, 0
+    NEO_HIGH
     brcs .bit5_1
-    cbi PORTB, 0
+    NEO_LOW
     nop
     nop
     rjmp .bit4
@@ -63,15 +102,15 @@ send_byte:
 .bit5_1:
     nop
     nop
-    cbi PORTB, 0
+    NEO_LOW
     nop
 
 ; ------- Bit 4 -------
 .bit4:
     lsl r16
-    sbi PORTB, 0
+    NEO_HIGH
     brcs .bit4_1
-    cbi PORTB, 0
+    NEO_LOW
     nop
     nop
     rjmp .bit3
@@ -79,15 +118,15 @@ send_byte:
 .bit4_1:
     nop
     nop
-    cbi PORTB, 0
+    NEO_LOW
     nop
 
 ; ------- Bit 3 -------
 .bit3:
     lsl r16
-    sbi PORTB, 0
+    NEO_HIGH
     brcs .bit3_1
-    cbi PORTB, 0
+    NEO_LOW
     nop
     nop
     rjmp .bit2
@@ -95,15 +134,15 @@ send_byte:
 .bit3_1:
     nop
     nop
-    cbi PORTB, 0
+    NEO_LOW
     nop
 
 ; ------- Bit 2 -------
 .bit2:
     lsl r16
-    sbi PORTB, 0
+    NEO_HIGH
     brcs .bit2_1
-    cbi PORTB, 0
+    NEO_LOW
     nop
     nop
     rjmp .bit1
@@ -111,15 +150,15 @@ send_byte:
 .bit2_1:
     nop
     nop
-    cbi PORTB, 0
+    NEO_LOW
     nop
 
 ; ------- Bit 1 -------
 .bit1:
     lsl r16
-    sbi PORTB, 0
+    NEO_HIGH
     brcs .bit1_1
-    cbi PORTB, 0
+    NEO_LOW
     nop
     nop
     rjmp .bit0
@@ -127,59 +166,73 @@ send_byte:
 .bit1_1:
     nop
     nop
-    cbi PORTB, 0
+    NEO_LOW
     nop
 
 ; ------- Bit 0 -------
 .bit0:
     lsl r16
-    sbi PORTB, 0
+    NEO_HIGH
     brcs .bit0_1
-    cbi PORTB, 0
+    NEO_LOW
     sei
     ret
 
 .bit0_1:
     nop
     nop
-    cbi PORTB, 0
+    NEO_LOW
     sei
     ret
 
-;  TODO  make better? common "end"?
 
-
+; ---------------------------------------------------------------------------
+; void send_pixel(uint8_t red,
+;                 uint8_t green,
+;                 uint8_t blue,
+;                 uint8_t white);
+; ---------------------------------------------------------------------------
 send_pixel:
-    sbi PORTB, 1   ; !!
     ; save caller's r16-17
     push r16
     push r17
 
-    ;  TODO  stress that this is GRBW. re-ordering
     ; r24 red
     ; r22 green
     ; r20 blue
     ; r18 white
-    mov r16, r24 ; r16 is red
-    mov r17, r22 ; r17 is green
-    mov r24, r17 ; r24 is now green
-    mov r22, r16 ; r22 is now red
-    rcall send_byte ; sending green
-    mov r24, r22
-    rcall send_byte ; sending red
-    mov r24, r20
-    rcall send_byte ; sending blue
-    mov r24, r18
-    rcall send_byte ; sending white
-    cbi PORTB, 1
+
+    mov r17, r24 ; r17 is red
+
+#ifdef PIXEL_ORDER_GRBW
+    SEND r22
+    SEND r17
+    SEND r20
+    SEND r18
+#elif defined(PIXEL_ORDER_RGBW)
+    SEND r24
+    SEND r22
+    SEND r20
+    SEND r18
+#else
+    .error "Define PIXEL_ORDER_GRBW or PIXEL_ORDER_RGBW"
+#endif
 
     ; restore caller's r16-17 (reverse order)
     pop r17
     pop r16
     ret
 
+
+; ---------------------------------------------------------------------------
+; void flood_pixels(uint8_t red,
+;                   uint8_t green,
+;                   uint8_t blue,
+;                   uint8_t white,
+;                   uint8_t num_pixels);
+; ---------------------------------------------------------------------------
 flood_pixels:
-    push  r16       ; save count
+    push  r16       ; save num_pixels (it's still available in r16, though)
     mov r2,  r24    ; = red
     mov r3,  r22    ; = green
     mov r4,  r20    ; = blue
@@ -201,6 +254,6 @@ flood_pixels:
     brne .loop
 
 .done:
-    ; restore count
+    ; restore num_pixels
     pop   r16
     ret
