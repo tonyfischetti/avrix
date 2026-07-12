@@ -131,10 +131,19 @@ int main() {
             }
         }  //  TODO  use a timer instead
         else {
+            // decide-to-sleep must be atomic: an interrupt between the
+            // check and sleep_cpu() would be processed and then slept
+            // through, leaving its effects unrendered until the next
+            // wake-up. goToSleep()'s sei();sleep_cpu() pair guarantees
+            // a pending wake source aborts the sleep immediately.
+            cli();
             if (!reWithBtn.pendingDebounceTimeout() &&
                 !abortTxP) {
                 HAL::Ticker::pause();
                 HAL::Sleep::goToSleep(SLEEP_MODE_PWR_DOWN);
+            }
+            else {
+                sei();
             }
         }
 
