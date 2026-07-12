@@ -3,7 +3,8 @@
 #include <stdint.h>
 #include <util/delay.h>
 
-constexpr uint8_t LATCH_TIME_US { 60 };
+// SK6812 datasheet specifies a >= 80 us reset/latch time
+constexpr uint8_t LATCH_TIME_US { 80 };
 
 #ifdef __cplusplus
 extern "C" {

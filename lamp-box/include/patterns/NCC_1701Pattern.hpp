@@ -113,10 +113,6 @@ struct NCC_1701Pattern final : Pattern {
     PatternState state          { PatternState::p00011000 };
     uint8_t brightness          {   25 };
     uint16_t interval           {  600 };
-    const uint8_t  redChannel   {   30 };
-    const uint8_t  greenChannel {   10 };
-    const uint8_t  blueChannel  {    1 };
-    const uint8_t  numPixels    {      };
           uint8_t* pixelArray   {      };
 
 };
