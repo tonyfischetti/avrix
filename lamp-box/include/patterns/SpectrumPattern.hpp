@@ -50,7 +50,7 @@ struct SpectrumPattern final : Pattern {
     }
 
     void onCW() override {
-        if (delay <= 65534)
+        if (delay < 65534)
             delay += 2;
     }
 

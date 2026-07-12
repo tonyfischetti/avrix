@@ -31,11 +31,13 @@ struct WarmStrobePattern final : Pattern {
     }
 
     void onCW() override {
-        strobeInterval += 2;
+        if (strobeInterval < 65534)
+            strobeInterval += 2;
     }
 
     void onCCW() override {
-        strobeInterval -= 2;
+        if (strobeInterval > 2)
+            strobeInterval -= 2;
     }
 
     void onRelease() override {

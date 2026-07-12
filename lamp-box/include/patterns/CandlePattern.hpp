@@ -90,11 +90,14 @@ struct CandlePattern final : Pattern {
     }
 
     void onCW() override {
-        interval += 2;
+        // tick() may return interval*5, which must stay within uint16_t
+        if (interval < 10000)
+            interval += 2;
     }
 
     void onCCW() override {
-        interval -= 2;
+        if (interval > 2)
+            interval -= 2;
     }
 
   private:
