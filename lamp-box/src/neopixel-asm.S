@@ -52,14 +52,19 @@
 
 ; ---------------------------------------------------------------------------
 ; void send_byte(uint8_t b);
+;
+; Clobbers r19 and r25 only (both call-clobbered per the avr-gcc ABI).
+; Restores the caller's interrupt flag on exit (via SREG) instead of
+; unconditionally enabling interrupts.
 ; ---------------------------------------------------------------------------
 send_byte:
+    in  r25, SREG
     cli
-    mov r16, r24
+    mov r19, r24
 
 ; ------- Bit 7 -------
 .bit7:
-    lsl r16
+    lsl r19
     NEO_HIGH
     brcs .bit7_1
     NEO_LOW
@@ -75,7 +80,7 @@ send_byte:
 
 ; ------- Bit 6 -------
 .bit6:
-    lsl r16
+    lsl r19
     NEO_HIGH
     brcs .bit6_1
     NEO_LOW
@@ -91,7 +96,7 @@ send_byte:
 
 ; ------- Bit 5 -------
 .bit5:
-    lsl r16
+    lsl r19
     NEO_HIGH
     brcs .bit5_1
     NEO_LOW
@@ -107,7 +112,7 @@ send_byte:
 
 ; ------- Bit 4 -------
 .bit4:
-    lsl r16
+    lsl r19
     NEO_HIGH
     brcs .bit4_1
     NEO_LOW
@@ -123,7 +128,7 @@ send_byte:
 
 ; ------- Bit 3 -------
 .bit3:
-    lsl r16
+    lsl r19
     NEO_HIGH
     brcs .bit3_1
     NEO_LOW
@@ -139,7 +144,7 @@ send_byte:
 
 ; ------- Bit 2 -------
 .bit2:
-    lsl r16
+    lsl r19
     NEO_HIGH
     brcs .bit2_1
     NEO_LOW
@@ -155,7 +160,7 @@ send_byte:
 
 ; ------- Bit 1 -------
 .bit1:
-    lsl r16
+    lsl r19
     NEO_HIGH
     brcs .bit1_1
     NEO_LOW
@@ -171,18 +176,18 @@ send_byte:
 
 ; ------- Bit 0 -------
 .bit0:
-    lsl r16
+    lsl r19
     NEO_HIGH
     brcs .bit0_1
     NEO_LOW
-    sei
+    out SREG, r25
     ret
 
 .bit0_1:
     nop
     nop
     NEO_LOW
-    sei
+    out SREG, r25
     ret
 
 
@@ -193,24 +198,22 @@ send_byte:
 ;                 uint8_t white);
 ; ---------------------------------------------------------------------------
 send_pixel:
-    ; save caller's r16-17
-    push r16
-    push r17
-
     ; r24 red
     ; r22 green
     ; r20 blue
     ; r18 white
 
-    mov r17, r24 ; r17 is red
+    ; send_byte only clobbers r19/r25, so r22/r20/r18 survive as-is;
+    ; red just needs to move out of r24 (send_byte's argument register)
+    mov r21, r24 ; r21 is red
 
 #ifdef PIXEL_ORDER_GRBW
     SEND r22
-    SEND r17
+    SEND r21
     SEND r20
     SEND r18
 #elif defined(PIXEL_ORDER_RGBW)
-    SEND r24
+    SEND r21
     SEND r22
     SEND r20
     SEND r18
@@ -218,9 +221,6 @@ send_pixel:
     .error "Define PIXEL_ORDER_GRBW or PIXEL_ORDER_RGBW"
 #endif
 
-    ; restore caller's r16-17 (reverse order)
-    pop r17
-    pop r16
     ret
 
 
@@ -232,28 +232,28 @@ send_pixel:
 ;                   uint8_t num_pixels);
 ; ---------------------------------------------------------------------------
 flood_pixels:
-    push  r16       ; save num_pixels (it's still available in r16, though)
-    mov r2,  r24    ; = red
-    mov r3,  r22    ; = green
-    mov r4,  r20    ; = blue
-    mov r5,  r18    ; = white
+    ; num_pixels arrives in r16, which is call-saved: copy it (and the
+    ; colors) into call-clobbered registers so nothing needs push/pop
+    mov r23, r24    ; = red
+    mov r26, r22    ; = green
+    mov r27, r20    ; = blue
+    mov r30, r18    ; = white
+    mov r31, r16    ; = num_pixels (loop counter)
 
-    tst   r16       ; what if it's already 0?
+    tst   r31       ; what if it's already 0?
     breq  .done
 
 .loop:
                     ; reload args
-    mov r24, r2     ; reload red
-    mov r22, r3     ; reload green
-    mov r20, r4     ; reload blue
-    mov r18, r5     ; reload white
+    mov r24, r23    ; reload red
+    mov r22, r26    ; reload green
+    mov r20, r27    ; reload blue
+    mov r18, r30    ; reload white
 
     rcall send_pixel
 
-    dec r16
+    dec r31
     brne .loop
 
 .done:
-    ; restore num_pixels
-    pop   r16
     ret
