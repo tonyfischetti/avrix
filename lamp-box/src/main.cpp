@@ -63,8 +63,11 @@ ISR(PCINT0_vect) {
     uint8_t changed = current ^ previousPINB;
     previousPINB = current;
 
+    // no process() here: the input state machines (and their callbacks)
+    // run only in main-loop context, so their state is never mutated
+    // from two contexts at once. checkPeripherals() picks this up
+    // within a millisecond.
     reWithBtn.notifyInterruptOccurred(now, changed);
-    reWithBtn.process();
 }
 
 inline void checkPeripherals() {
