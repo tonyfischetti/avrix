@@ -3,7 +3,6 @@
 #include <avr/io.h>
 #include <avr/power.h>
 #include <util/atomic.h>
-#include <util/delay.h>
 
 #include "avril.hpp"
 #include "patterns/patterns.hpp"
@@ -130,12 +129,18 @@ int main() {
         latch();
 
         if (delayTimeP) {
-            for (uint16_t i = 0; i < delayTimeP; i++) {
-                if (abortTxP) break; //  TODO  ??
+            // pace the frame in IDLE sleep instead of a _delay_ms spin:
+            // Timer0 keeps running in IDLE, so its 1 ms tick (or any pin
+            // change) wakes us. An interrupt landing between the check
+            // and sleep_cpu() costs at most one tick of oversleep, so
+            // no atomic gate is needed here (unlike the PWR_DOWN path)
+            uint32_t frameStart = HAL::Ticker::getNumTicks();
+            while (!abortTxP &&
+                   (HAL::Ticker::getNumTicks() - frameStart) < delayTimeP) {
                 checkPeripherals();
-                _delay_ms(1);
+                HAL::Sleep::goToSleep(SLEEP_MODE_IDLE);
             }
-        }  //  TODO  use a timer instead
+        }
         else {
             // decide-to-sleep must be atomic: an interrupt between the
             // check and sleep_cpu() would be processed and then slept
