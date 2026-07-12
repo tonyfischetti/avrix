@@ -116,9 +116,12 @@ int main() {
 
         // pattern potentially changed
         if (abortTxP) {
+            // clear first: an interrupt arriving during the flood
+            // re-raises the flag and gets its own blank next lap,
+            // instead of having its request erased
+            abortTxP = false;
             flood_pixels(0, 0, 0, 0, TOTAL_ROWS*8);
             latch();
-            abortTxP = false;
         }
 
         checkPeripherals();
