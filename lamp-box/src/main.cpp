@@ -66,7 +66,7 @@ ISR(PCINT0_vect) {
     // run only in main-loop context, so their state is never mutated
     // from two contexts at once. checkPeripherals() picks this up
     // within a millisecond.
-    reWithBtn.notifyInterruptOccurred(now, changed);
+    reWithBtn.notifyInterruptOccurred(now, HAL::GPIO::Port::B, changed);
 }
 
 inline void checkPeripherals() {
