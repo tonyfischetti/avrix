@@ -13,7 +13,7 @@ using NEO = HAL::GPIO::GPIO<5>;
 using LED = HAL::GPIO::GPIO<6>;
 
 HAL::Devices::RotaryEncoderWithButton<3, 30, 1000, HIGH, true,
-                                      7, 2, 0, HIGH, true> reWithBtn;
+                                      7, 2, true> reWithBtn;
 
 constexpr uint8_t TOTAL_ROWS                {                  5 }; // 0 counts
 constexpr uint8_t NUM_PIXELS                { (TOTAL_ROWS-1) * 8 };
