@@ -4,7 +4,7 @@
 #include <util/delay.h>
 
 #include "avril.hpp"
-#include "uart.hpp"
+#include "comms/uart.hpp"
 #include "utils/IntTransitionDebouncer.hpp"
 // #include "utils/IntButtonDebouncer.hpp"
 #include "devices/RotaryEncoder.hpp"
@@ -33,7 +33,8 @@ using MD2  = HAL::GPIO::GPIO<13>;
 using MD3  = HAL::GPIO::GPIO<26>;
 using GATE = HAL::GPIO::GPIO<11>;
 
-// using WD   = HAL::Watchdog::Watchdog<19>;
+// the old Watchdog<powOfTwo> API is gone; interrupt mode is now e.g.
+// HAL::Watchdog::enableInterrupt<HAL::Watchdog::Timeout::MS4096>();
 
 // HAL::GPIO::GPIO<4>  RE_SW;
 // HAL::GPIO::GPIO<5>  RE_CLK;
@@ -45,20 +46,23 @@ using GATE = HAL::GPIO::GPIO<11>;
 HAL::Devices::Button<4, 30, 1000, HIGH, true> sw;
 
 // HAL::Utils::IntTransitionDebouncer<5,  1,  HIGH, true> clk;
-HAL::Devices::RotaryEncoder<5, 6, 1, HIGH, true> clk;
+HAL::Devices::RotaryEncoder<5, 6, true> clk;
 HAL::Utils::IntTransitionDebouncer<14, 3,  HIGH, true> btn;
 
 
+// one ISR per port, each passing its Port so the devices can filter:
+// bit positions collide across ports, and on the 328P every port has
+// its own PCINT vector
 ISR(PCINT2_vect) {
     uint8_t current = PIND;
     uint32_t now = HAL::Ticker::getNumTicks();
     uint8_t changed = current ^ previousPIND;
     previousPIND = current;
 
-    sw.notifyInterruptOccurred(now, changed);
+    sw.notifyInterruptOccurred(now, HAL::GPIO::Port::D, changed);
 
-    clk.notifyInterruptOccurred(now, changed);
-    
+    clk.notifyInterruptOccurred(now, HAL::GPIO::Port::D, changed);
+
 }
 
 
@@ -68,7 +72,7 @@ ISR(PCINT0_vect) {
     uint8_t changed = current ^ previousPINB;
     previousPINB = current;
 
-    btn.notifyInterruptOccurred(now, changed);
+    btn.notifyInterruptOccurred(now, HAL::GPIO::Port::B, changed);
 }
 
 
@@ -96,7 +100,7 @@ void start_sequence() {
 int main(void) {
 
 
-    HAL::UART::init<9600>();
+    HAL::Comms::UART::init<9600>();
 
     // RE_DT.setInputPullup();
     LED0::setOutput();
@@ -112,13 +116,13 @@ int main(void) {
     sw.begin();
     clk.begin();
     btn.begin();
-    // WD::reset();
+    // HAL::Watchdog::enableInterrupt<HAL::Watchdog::Timeout::MS4096>();
     
     sei();
 
     start_sequence();
 
-    HAL::UART::print(alice);
+    HAL::Comms::UART::print(alice);
 
     sw.setOnLongPress([]() { GATE::toggle(); });
 
@@ -182,6 +186,8 @@ int main(void) {
                 break;
             case HAL::Transition::FALLING:
                 GATE::toggle();
+                break;
+            case HAL::Transition::NONE:
                 break;
             default:
                 break;
