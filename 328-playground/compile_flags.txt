@@ -2,6 +2,7 @@
 -DF_CPU=16000000UL
 -std=gnu++17
 -xc++
+--target=avr
 -Os
 -Iinclude
 -I../avril/include
@@ -10,7 +11,6 @@
 -I/usr/lib/avr/include
 
 # mac os
--I/opt/homebrew/opt/avr-gcc/avr/include
--I/opt/homebrew/Cellar/avr-gcc@9/9.4.0_1/avr/include
+-I/opt/homebrew/opt/avr-gcc@14/avr/include
 
 -Wno-unknown-attributes

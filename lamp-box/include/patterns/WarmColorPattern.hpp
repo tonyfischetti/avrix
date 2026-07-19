@@ -9,15 +9,13 @@ struct WarmColorPattern final : Pattern {
 
     uint16_t tick() override {
         uint8_t totalPixels { static_cast<uint8_t>(numRows * 8) };
-        uint8_t greenChannel = (brightness >> 4) +
-                               (brightness >> 4) +
-                               (brightness >> 4) +
-                               (brightness >> 6) +
-                               (brightness >> 5);
+        uint8_t greenChannel = (brightness >> 2) +
+                               (brightness >> 3);
+        uint8_t blueChannel  = (brightness >> 4);
         if (totalPixels == 0)
             flood_pixels(0, 0, 0, 0, TOTAL_ROWS*8);
         else
-            flood_pixels(brightness, greenChannel, 0, 0, totalPixels);
+            flood_pixels(brightness, greenChannel, blueChannel, 0, totalPixels);
         return 0;
     }
 

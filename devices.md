@@ -5,7 +5,6 @@ Accelerometer and Gyroscope
   - ADXL375
   - BNO085 / BNO080
 
-
 Barometric Pressure & Altitude Sensor
   - BMP180
   - BMP183
@@ -15,7 +14,6 @@ Barometric Pressure & Altitude Sensor
   - BMP585
   - MPL115A2
   - DPS310 
-
 
 Wifi (HTTPS?)
   - ATWINC1500

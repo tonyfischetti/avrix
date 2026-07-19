@@ -22,23 +22,22 @@ volatile  uint8_t previousPINB              {               0xFF };
 volatile  uint8_t abortTxP 	                {              false };
 static    uint8_t pixelArray [NUM_CHANNELS] {                    };
 
-static NCC_1701Pattern                   ncc1701Pattern        { pixelArray };
-static CandlePattern                     candlePattern         { NUM_CHANNELS, pixelArray };
-static WarmLightPattern     <TOTAL_ROWS> warmLightPattern      {};
-static WarmColorPattern2    <TOTAL_ROWS> warmColorPattern2     {};
-static WarmColorPattern3    <TOTAL_ROWS> warmColorPattern3     {};
-static BisexualSwitchPattern<TOTAL_ROWS> bisexualSwitchPattern {};
-static WarmStrobePattern    <TOTAL_ROWS> warmStrobePattern     {};
-static SpectrumPattern      <TOTAL_ROWS> spectrumPattern       {};
-static ChooseAColorPattern  <TOTAL_ROWS> chooseAColorPattern   {};
-// static WarmColorPattern     <TOTAL_ROWS> warmColorPattern      {};
-// static CoolWhiteColorPattern<TOTAL_ROWS> coolWhiteColorPattern {};
+static NCC_1701Pattern                    ncc1701Pattern        { pixelArray };
+static CandlePattern                      candlePattern         { NUM_CHANNELS, pixelArray };
+static WarmLightPattern      <TOTAL_ROWS> warmLightPattern      {};
+static WarmColorPattern      <TOTAL_ROWS> warmColorPattern      {};
+static WarmComboPattern      <TOTAL_ROWS> warmComboPattern      {};
+static SpectrumPattern       <TOTAL_ROWS> spectrumPattern       {};
+static ChooseAColorPattern   <TOTAL_ROWS> chooseAColorPattern   {};
+static BisexualSwitchPattern <TOTAL_ROWS> bisexualSwitchPattern {};
+static WarmStrobePattern     <TOTAL_ROWS> warmStrobePattern     {};
 
 static Pattern* patternList[] = {
     &ncc1701Pattern,
     &candlePattern,
     &warmLightPattern,
-    &warmColorPattern2,
+    &warmComboPattern,
+    &warmColorPattern,
     &spectrumPattern,
     &chooseAColorPattern,
     &bisexualSwitchPattern,

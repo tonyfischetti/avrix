@@ -1,13 +1,11 @@
 #pragma once
 
-#include "WarmColorPattern.hpp"
-#include "WarmColorPattern2.hpp"
+#include "NCC_1701Pattern.hpp"
 #include "CandlePattern.hpp"
-#include "WarmColorPattern3.hpp"
-#include "CoolWhiteColorPattern.hpp"
 #include "WarmLightPattern.hpp"
-#include "BisexualSwitchPattern.hpp"
-#include "WarmStrobePattern.hpp"
+#include "WarmColorPattern.hpp"
+#include "WarmComboPattern.hpp"
 #include "SpectrumPattern.hpp"
 #include "ChooseAColorPattern.hpp"
-#include "NCC_1701Pattern.hpp"
+#include "BisexualSwitchPattern.hpp"
+#include "WarmStrobePattern.hpp"
